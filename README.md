@@ -64,7 +64,7 @@ VedAI is built with a modular enterprise-grade architecture:
 
 ## 📞 Support & Enterprise
 For custom integrations or enterprise support:
-- **Websites**: [www.vedsaas.com](https://www.vedsaas.com) | [www.vedsaas.in](https://www.vedsaas.in)
+- **Websites**: [www.shashwatam.com](https://www.shashwatam.com)  [www.vedsaas.com](https://www.vedsaas.com) | [www.vedsaas.in](https://www.vedsaas.in)
 - **Email**: support@vedsaas.com | support@shashwatam.com
 
 ---

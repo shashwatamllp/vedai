@@ -52,6 +52,12 @@ def chat(
 
     console.print(f"[bold green]Session Active.[/bold green] (Type 'exit' to quit)\n")
 
+    from vedai.engine.agent import AgentLoop
+    from vedai.engine.tools import ToolEngine
+    
+    tools = ToolEngine()
+    agent = AgentLoop(client, tools, selected_model)
+
     while True:
         query = typer.prompt("User")
         if query.lower() in ["exit", "quit"]:
@@ -59,10 +65,10 @@ def chat(
             
         system_prompt = get_system_prompt(ctx_mgr)
         
-        console.print("\n[bold cyan]VedAI:[/bold cyan]")
+        console.print("\n[bold cyan]VedAI Agent Thinking...[/bold cyan]")
         response_text = ""
         with Live(Markdown(""), refresh_per_second=10) as live:
-            for chunk in client.chat(selected_model, query, system_prompt):
+            for chunk in agent.run(query, system_prompt):
                 response_text += chunk
                 live.update(Markdown(response_text))
         console.print("\n" + "─" * console.width + "\n")

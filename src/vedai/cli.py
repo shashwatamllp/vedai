@@ -50,28 +50,31 @@ def chat(
                 if total > 0:
                     progress.update(task, completed=completed, total=total)
 
-    console.print(f"[bold green]Session Active.[/bold green] (Type 'exit' to quit)\n")
+    layout = VedUI.get_layout()
+    VedUI.update_header(layout)
+    VedUI.update_sidebar(layout, hw.specs, selected_model)
+    VedUI.update_main(layout, "Welcome to VedAI Prime. Type your query below.")
+    VedUI.update_footer(layout, "System Online")
 
-    from vedai.engine.agent import AgentLoop
-    from vedai.engine.tools import ToolEngine
-    
-    tools = ToolEngine()
-    agent = AgentLoop(client, tools, selected_model)
-
-    while True:
-        query = typer.prompt("User")
-        if query.lower() in ["exit", "quit"]:
-            break
+    with Live(layout, refresh_per_second=4, screen=True):
+        while True:
+            VedUI.update_footer(layout, "Waiting for Input")
+            query = typer.prompt("User")
+            if query.lower() in ["exit", "quit"]:
+                break
+                
+            system_prompt = get_system_prompt(ctx_mgr)
+            VedUI.update_footer(layout, "Agent Thinking...")
             
-        system_prompt = get_system_prompt(ctx_mgr)
-        
-        console.print("\n[bold cyan]VedAI Agent Thinking...[/bold cyan]")
-        response_text = ""
-        with Live(Markdown(""), refresh_per_second=10) as live:
+            response_text = ""
             for chunk in agent.run(query, system_prompt):
                 response_text += chunk
-                live.update(Markdown(response_text))
-        console.print("\n" + "─" * console.width + "\n")
+                VedUI.update_main(layout, Markdown(response_text))
+            
+            VedUI.update_footer(layout, "Response Ready")
+            # Small pause to let the user see the "Response Ready" state
+            import time
+            time.sleep(1)
 
 @app.command()
 def doctor():

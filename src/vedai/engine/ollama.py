@@ -32,7 +32,7 @@ class OllamaClient:
                 if line:
                     yield json.loads(line)
 
-    def chat(self, model: str, prompt: str, system: str = "") -> Generator[str, None, None]:
+    def chat(self, model: str, prompt: str, system: str = "") -> Generator[dict, None, None]:
         url = f"{self.BASE_URL}/generate"
         payload = {
             "model": model,
@@ -44,6 +44,10 @@ class OllamaClient:
             for line in response.iter_lines():
                 if line:
                     chunk = json.loads(line)
-                    yield chunk.get("response", "")
-                    if chunk.get("done", False):
-                        break
+                    # Yielding full chunk to get stats at the end
+                    yield {
+                        "response": chunk.get("response", ""),
+                        "done": chunk.get("done", False),
+                        "prompt_tokens": chunk.get("prompt_eval_count", 0),
+                        "response_tokens": chunk.get("eval_count", 0)
+                    }

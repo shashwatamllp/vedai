@@ -1,6 +1,11 @@
 # VedAI - High-Level Local AI Dev Assistant
+### Ved4u by Shashwatam Eco-Chie Creations LLP
 
 VedAI is a powerful, free, and local terminal-based AI assistant that understands your codebase. It automatically optimizes itself based on your hardware.
+
+## Official Links
+- **Websites**: [www.vedsaas.com](https://www.vedsaas.com) | [www.vedsaas.in](https://www.vedsaas.in)
+- **Support**: support@vedsaas.com | support@shashwatam.com
 
 ## Features
 - **Hardware Aware**: Auto-detects RAM/GPU to pick the best model.

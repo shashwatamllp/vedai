@@ -22,8 +22,12 @@ class VedAIApp:
         console.clear()
         console.print(Panel.fit(
             "[bold cyan]VED-AI: HIGH-LEVEL LOCAL DEV ASSISTANT[/bold cyan]\n"
-            "[italic white]Advanced Project Intelligence Engine[/italic white]",
-            border_style="blue"
+            "[bold white]Ved4u by Shashwatam Eco-Chie Creations LLP[/bold white]\n"
+            "[italic dim]Professional Project Intelligence Engine[/italic dim]\n\n"
+            "[blue]Web:[/blue] www.vedsaas.com | www.vedsaas.in\n"
+            "[blue]Support:[/blue] support@vedsaas.com | support@shashwatam.com",
+            border_style="blue",
+            title="[bold yellow]PREMIUM EDITION[/bold yellow]"
         ))
         
         self.hardware.display_report()
@@ -61,8 +65,8 @@ class VedAIApp:
                     project_context = self.context.get_project_summary()
                 
                 system_prompt = (
-                    "You are VedAI, a high-level senior software engineer AI. "
-                    "You run locally on the user's machine. "
+                    "You are VedAI, a high-level senior software engineer AI developed by Shashwatam Eco-Chie Creations LLP. "
+                    "You run locally on the user's machine via Ved4u. "
                     "Below is the context of the user's current project. "
                     "Use this information to answer precisely and help with coding tasks.\n\n"
                     f"{project_context}"

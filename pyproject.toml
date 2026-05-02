@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vedai"
+version = "1.0.0"
+authors = [
+  { name="Shashwatam Eco-Chie Creations LLP", email="support@vedsaas.com" },
+]
+description = "A high-level local AI assistant for developers."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "typer[all]",
+    "rich",
+    "requests",
+    "psutil",
+    "GPUtil",
+    "pathspec",
+    "pyyaml"
+]
+
+[project.scripts]
+vedai = "vedai.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]

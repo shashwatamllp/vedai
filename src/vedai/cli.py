@@ -59,43 +59,45 @@ def chat(
     VedUI.update_header(layout)
     VedUI.update_sidebar(layout, hw.specs, selected_model)
     VedUI.update_main(layout, "Welcome to VedAI Prime. Type your query below.")
-    VedUI.update_footer(layout, "System Online")
-
-    with Live(layout, refresh_per_second=4, screen=True):
-        try:
-            while True:
-                VedUI.update_footer(layout, "Waiting for Input")
-                query = typer.prompt("User")
-                if query.lower() in ["exit", "quit"]:
-                    break
-                    
-                system_prompt = get_system_prompt(ctx_mgr)
+    # Simplified Chat Loop for Windows Stability
+    try:
+        while True:
+            # 1. Get User Input (Outside Live)
+            console.print("\n[bold cyan]User:[/bold cyan] ", end="")
+            query = input()
+            
+            if query.lower() in ["exit", "quit"]:
+                break
                 
-                # Smart Symbol Indexing on the fly
+            system_prompt = get_system_prompt(ctx_mgr)
+            
+            # 2. Start Live Display for AI Response
+            with Live(layout, refresh_per_second=4, screen=False) as live:
+                VedUI.update_footer(layout, "Agent Thinking...")
+                
+                # Smart Symbol Indexing
                 files = ctx_mgr.scan()
                 ctx_mgr.graph.index_project(files)
-                
-                # Search for relevant symbols based on query
                 words = query.split()
                 graph_context = str(ctx_mgr.graph.get_context_for_agent(words))
                 full_system_prompt = str(system_prompt) + graph_context
 
-                VedUI.update_footer(layout, "Agent Thinking...")
-                
                 response_text = ""
                 for chunk in agent.run(query, full_system_prompt):
                     response_text += chunk
                     VedUI.update_main(layout, Markdown(response_text))
+                    live.refresh()
                 
                 VedUI.update_footer(layout, "Response Ready")
-                import time
-                time.sleep(1)
-        except KeyboardInterrupt:
-            pass
-        except Exception as e:
-            VedUI.update_footer(layout, f"ERROR: {e}")
-            console.print(f"\n[bold red]CRITICAL ERROR:[/bold red] {e}")
-            input("\nPress Enter to exit...")
+            
+            # 3. Print a separator for clarity
+            console.print("-" * 50)
+
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Session Ended.[/yellow]")
+    except Exception as e:
+        console.print(f"\n[bold red]CRITICAL ERROR:[/bold red] {e}")
+        input("\nPress Enter to exit...")
 
 @app.command()
 def doctor():

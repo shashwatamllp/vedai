@@ -269,7 +269,10 @@ def main():
     
     # Auto-Launch Studio immediately
     print("🚀 Auto-Launching VedAI Studio...")
-    subprocess.Popen([python_exe, "-m", "vedai.cli", "studio"], creationflags=subprocess.CREATE_NEW_CONSOLE)
+    try:
+        subprocess.Popen([python_exe, "-m", "vedai.cli", "studio"], creationflags=subprocess.CREATE_NEW_CONSOLE)
+    except:
+        print("⚠️ Auto-launch failed. Please use the desktop shortcut.")
     
     if "SUCCESS" in result.stdout:
         print("✅ Desktop Shortcut Created Successfully.")

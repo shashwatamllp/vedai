@@ -69,10 +69,21 @@ def chat(
                 break
                 
             system_prompt = get_system_prompt(ctx_mgr)
+            
+            # Smart Symbol Indexing on the fly
+            files = ctx_mgr.scan()
+            ctx_mgr.graph.index_project(files)
+            
+            # Search for relevant symbols based on query
+            # (Simple extraction of words from query for now)
+            words = query.split()
+            graph_context = ctx_mgr.graph.get_context_for_agent(words)
+            full_system_prompt = system_prompt + graph_context
+
             VedUI.update_footer(layout, "Agent Thinking...")
             
             response_text = ""
-            for chunk in agent.run(query, system_prompt):
+            for chunk in agent.run(query, full_system_prompt):
                 response_text += chunk
                 VedUI.update_main(layout, Markdown(response_text))
             

@@ -23,7 +23,9 @@ dependencies = [
     "psutil",
     "GPUtil",
     "pathspec",
-    "pyyaml"
+    "pyyaml",
+    "tree-sitter",
+    "tree-sitter-languages"
 ]
 
 [project.scripts]

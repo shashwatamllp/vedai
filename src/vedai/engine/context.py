@@ -3,9 +3,11 @@ from pathlib import Path
 from typing import List
 import pathspec
 
+from vedai.engine.graph import SymbolGraph
+
 class ContextManager:
     """
-    Enterprise-grade project context management with .gitignore support.
+    Enterprise-grade project context management with .gitignore support and Symbol Graph.
     """
     DEFAULT_EXCLUDES = {'.git', '__pycache__', 'node_modules', 'venv', '.venv', 'dist', 'build'}
     ALLOWED_EXTENSIONS = {'.py', '.js', '.ts', '.html', '.css', '.md', '.json', '.txt', '.c', '.cpp', '.h', '.go', '.rs'}
@@ -13,6 +15,7 @@ class ContextManager:
     def __init__(self, root_path: str = "."):
         self.root_path = Path(root_path).resolve()
         self.spec = self._load_gitignore()
+        self.graph = SymbolGraph(root_path)
 
     def _load_gitignore(self) -> pathspec.PathSpec:
         gitignore_path = self.root_path / ".gitignore"

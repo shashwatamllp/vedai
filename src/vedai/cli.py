@@ -62,35 +62,40 @@ def chat(
     VedUI.update_footer(layout, "System Online")
 
     with Live(layout, refresh_per_second=4, screen=True):
-        while True:
-            VedUI.update_footer(layout, "Waiting for Input")
-            query = typer.prompt("User")
-            if query.lower() in ["exit", "quit"]:
-                break
+        try:
+            while True:
+                VedUI.update_footer(layout, "Waiting for Input")
+                query = typer.prompt("User")
+                if query.lower() in ["exit", "quit"]:
+                    break
+                    
+                system_prompt = get_system_prompt(ctx_mgr)
                 
-            system_prompt = get_system_prompt(ctx_mgr)
-            
-            # Smart Symbol Indexing on the fly
-            files = ctx_mgr.scan()
-            ctx_mgr.graph.index_project(files)
-            
-            # Search for relevant symbols based on query
-            # (Simple extraction of words from query for now)
-            words = query.split()
-            graph_context = ctx_mgr.graph.get_context_for_agent(words)
-            full_system_prompt = system_prompt + graph_context
+                # Smart Symbol Indexing on the fly
+                files = ctx_mgr.scan()
+                ctx_mgr.graph.index_project(files)
+                
+                # Search for relevant symbols based on query
+                words = query.split()
+                graph_context = ctx_mgr.graph.get_context_for_agent(words)
+                full_system_prompt = system_prompt + graph_context
 
-            VedUI.update_footer(layout, "Agent Thinking...")
-            
-            response_text = ""
-            for chunk in agent.run(query, full_system_prompt):
-                response_text += chunk
-                VedUI.update_main(layout, Markdown(response_text))
-            
-            VedUI.update_footer(layout, "Response Ready")
-            # Small pause to let the user see the "Response Ready" state
-            import time
-            time.sleep(1)
+                VedUI.update_footer(layout, "Agent Thinking...")
+                
+                response_text = ""
+                for chunk in agent.run(query, full_system_prompt):
+                    response_text += chunk
+                    VedUI.update_main(layout, Markdown(response_text))
+                
+                VedUI.update_footer(layout, "Response Ready")
+                import time
+                time.sleep(1)
+        except KeyboardInterrupt:
+            pass
+        except Exception as e:
+            VedUI.update_footer(layout, f"ERROR: {e}")
+            console.print(f"\n[bold red]CRITICAL ERROR:[/bold red] {e}")
+            input("\nPress Enter to exit...")
 
 @app.command()
 def doctor():

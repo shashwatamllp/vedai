@@ -1,5 +1,6 @@
 import typer
 import logging
+import subprocess
 from typing import Optional
 from rich.console import Console
 from rich.live import Live

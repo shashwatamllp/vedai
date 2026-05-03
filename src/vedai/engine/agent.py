@@ -32,11 +32,8 @@ class AgentLoop:
             current_step += 1
             full_response = ""
             
-            # Simple prompt for the LLM to follow the loop
-            prompt = self._build_prompt(history)
-            
-            # Get response from LLM
-            for chunk in self.client.chat(self.model, prompt):
+            # Get response from LLM using chat API (structured messages)
+            for chunk in self.client.chat(self.model, history):
                 text = chunk.get("response", "")
                 full_response += text
                 yield text

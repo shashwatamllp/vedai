@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VedAI Web Studio | Premium AI Coding</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .glow { box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); }
+        .code-font { font-family: 'JetBrains Mono', monospace; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-[#0b0f19] text-gray-200 h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="h-16 glass border-b flex items-center justify-between px-6 z-50">
+        <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-blue-600 rounded-lg glow flex items-center justify-center font-bold text-white">V</div>
+            <h1 class="text-xl font-semibold tracking-tight text-white">VedAI <span class="text-blue-500 text-sm font-light">Web Studio</span></h1>
+        </div>
+        <div class="flex items-center space-x-4">
+            <div id="hw-status" class="flex items-center space-x-3 text-xs bg-gray-900/50 px-3 py-1.5 rounded-full border border-white/5">
+                <span class="flex h-2 w-2 rounded-full bg-green-500"></span>
+                <span id="cpu-load">CPU: 4 Cores</span>
+                <span class="text-gray-600">|</span>
+                <span id="ram-load">RAM: 15.82GB</span>
+            </div>
+            <button class="bg-blue-600/10 text-blue-400 border border-blue-500/20 px-4 py-1.5 rounded-md text-sm hover:bg-blue-600 hover:text-white transition-all">
+                Publish Project
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex overflow-hidden">
+        
+        <!-- Left Pane: Chat -->
+        <section class="w-1/2 flex flex-col border-r border-white/5 bg-[#0b0f19]">
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
+                <div class="flex flex-col space-y-2">
+                    <div class="text-xs text-blue-500 font-semibold uppercase tracking-widest">VedAI System</div>
+                    <div class="bg-blue-600/5 border border-blue-500/10 p-4 rounded-xl max-w-[90%]">
+                        Welcome to the Premium Web Studio. I am ready to build with you. What are we creating today?
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="p-6 border-t border-white/5 glass">
+                <div class="relative">
+                    <textarea id="user-input" rows="3" class="w-full bg-gray-900/50 border border-white/10 rounded-xl p-4 pr-16 focus:outline-none focus:border-blue-500 transition-all resize-none text-sm" placeholder="Ask VedAI to build something..."></textarea>
+                    <button id="send-btn" class="absolute right-3 bottom-3 bg-blue-600 p-2 rounded-lg hover:bg-blue-500 transition-all glow">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Pane: Artifacts / Preview -->
+        <section class="w-1/2 bg-[#0d121d] flex flex-col">
+            <div class="h-12 border-b border-white/5 flex items-center px-4 justify-between bg-gray-900/30">
+                <div class="flex space-x-4 text-xs font-medium">
+                    <button class="text-blue-400 border-b-2 border-blue-500 pb-2 px-1">PREVIEW</button>
+                    <button class="text-gray-500 hover:text-gray-300 pb-2 px-1">CODE</button>
+                    <button class="text-gray-500 hover:text-gray-300 pb-2 px-1">STRUCTURE</button>
+                </div>
+                <div class="flex space-x-2">
+                    <div class="w-2.5 h-2.5 rounded-full bg-red-500/20 border border-red-500/40"></div>
+                    <div class="w-2.5 h-2.5 rounded-full bg-yellow-500/20 border border-yellow-500/40"></div>
+                    <div class="w-2.5 h-2.5 rounded-full bg-green-500/20 border border-green-500/40"></div>
+                </div>
+            </div>
+            <div id="preview-container" class="flex-1 bg-white rounded-m m-4 shadow-2xl overflow-hidden relative">
+                <!-- Live Preview Frame -->
+                <div class="absolute inset-0 flex items-center justify-center text-gray-400 font-light italic">
+                    Waiting for output...
+                </div>
+                <iframe id="preview-frame" class="w-full h-full border-none hidden"></iframe>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const previewFrame = document.getElementById('preview-frame');
+        const previewContainer = document.getElementById('preview-container');
+
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            if(!text) return;
+
+            // Add user message to UI
+            const userDiv = document.createElement('div');
+            userDiv.className = 'flex flex-col items-end space-y-2';
+            userDiv.innerHTML = `<div class="text-xs text-gray-500 font-semibold uppercase tracking-widest">User</div>
+                                <div class="bg-white/5 border border-white/10 p-4 rounded-xl max-w-[90%] text-white text-sm">${text}</div>`;
+            chatMessages.appendChild(userDiv);
+            userInput.value = '';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Add AI Placeholder
+            const aiDiv = document.createElement('div');
+            aiDiv.className = 'flex flex-col space-y-2';
+            aiDiv.innerHTML = `<div class="text-xs text-blue-500 font-semibold uppercase tracking-widest">VedAI Studio</div>
+                               <div id="current-response" class="bg-blue-600/5 border border-blue-500/10 p-4 rounded-xl max-w-[90%] text-sm min-h-[50px]"></div>`;
+            chatMessages.appendChild(aiDiv);
+            const responseContainer = aiDiv.querySelector('#current-response');
+
+            // Call Backend (FastAPI)
+            try {
+                const response = await fetch('http://localhost:8000/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: json.stringify({ message: text })
+                });
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullText = "";
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data === '[DONE]') break;
+                            const payload = JSON.parse(data);
+                            fullText += payload.text;
+                            responseContainer.innerText = fullText;
+                            
+                            // Simple logic to detect HTML/Code and show in preview
+                            if (fullText.includes('<!DOCTYPE html>') || fullText.includes('<html')) {
+                                previewFrame.classList.remove('hidden');
+                                previewContainer.querySelector('.italic').classList.add('hidden');
+                                previewFrame.srcdoc = fullText.match(/<html[\s\S]*<\/html>/i)?.[0] || fullText;
+                            }
+                        }
+                    }
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+            } catch (e) {
+                responseContainer.innerText = "Error: Make sure VedAI Server is running.";
+                responseContainer.classList.add('text-red-400');
+            }
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>

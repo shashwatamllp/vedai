@@ -25,7 +25,9 @@ dependencies = [
     "pathspec",
     "pyyaml",
     "tree-sitter",
-    "tree-sitter-languages"
+    "tree-sitter-languages",
+    "fastapi",
+    "uvicorn"
 ]
 
 [project.scripts]

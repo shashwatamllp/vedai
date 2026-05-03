@@ -4,6 +4,7 @@ import subprocess
 import re
 import os
 import psutil
+import time
 from typing import Optional
 from rich.console import Console
 from rich.live import Live
@@ -132,6 +133,34 @@ def chat(
     except Exception as e:
         console.print(f"\n[bold red]CRITICAL ERROR:[/bold red] {e}")
         input("\nPress Enter to exit...")
+
+@app.command()
+def studio():
+    """Launch the Premium VedAI Web Studio."""
+    import webbrowser
+    import threading
+    from vedai.server import app
+    import uvicorn
+
+    def start_server():
+        uvicorn.run(app, host="127.0.0.1", port=8000, log_level="error")
+
+    console.print("\n" + "="*50)
+    console.print("🚀 [bold cyan]LAUNCHING VED-AI PREMIUM STUDIO[/bold cyan]")
+    console.print("📍 URL: http://127.0.0.1:8000")
+    console.print("="*50 + "\n")
+
+    # Start server in thread
+    threading.Thread(target=start_server, daemon=True).start()
+    
+    # Open browser
+    webbrowser.open("http://127.0.0.1:8000")
+    
+    # Keep main thread alive
+    try:
+        while True: time.sleep(1)
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Studio Stopped.[/yellow]")
 
 @app.command()
 def doctor():

@@ -256,7 +256,7 @@ def main():
     try {{
         $s = (New-Object -ComObject WScript.Shell).CreateShortcut("{shortcut_path}")
         $s.TargetPath = "{python_exe}"
-        $s.Arguments = "-m vedai.cli chat"
+        $s.Arguments = "studio"
         $s.WorkingDirectory = "{base_dir}"
         if (Test-Path "{logo_path}") {{ $s.IconLocation = "{logo_path}" }}
         $s.Save()

@@ -37,9 +37,11 @@ class OllamaClient:
         }
         try:
             with httpx.stream("POST", url, json=payload, timeout=None) as response:
-                if response.status_code != 200:
-                    # [EMERGENCY FALLBACK] If storage error occurs, tell the user
-                    yield {"message": {"content": f"⚠️ Ollama Error ({response.status_code}). Storage drive might be disconnected."}}
+                if response.status_code == 404:
+                    yield {"message": {"content": f"❌ Model '{model}' not found. Please wait while I pull it or run 'ollama pull {model}' in terminal."}}
+                    return
+                elif response.status_code != 200:
+                    yield {"message": {"content": f"⚠️ Ollama Error ({response.status_code}). Check if your storage drive is connected."}}
                     return
                 
                 for line in response.iter_lines():

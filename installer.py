@@ -196,7 +196,16 @@ def main():
     
     print(f"🚀 Installation Target: {install_path} ({psutil.disk_usage(best_drive).free // (1024**3)} GB Free)")
 
-    # 3. Ollama Setup
+    # 3. Ollama Setup & Refresh
+    print("🔄 Refreshing Ollama Service...")
+    try:
+        os.system("taskkill /F /IM ollama.exe /T >nul 2>&1")
+        time.sleep(2)
+        # Start Ollama in background
+        subprocess.Popen(["ollama", "serve"], creationflags=subprocess.CREATE_NEW_CONSOLE)
+        time.sleep(3)
+    except: pass
+    
     if not setup_ollama(install_path):
         sys.exit(1)
 

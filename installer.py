@@ -112,16 +112,22 @@ def setup_ollama(download_path):
             os.system("taskkill /F /IM \"Ollama Setup.exe\" /T >nul 2>&1")
             time.sleep(2)
 
-            # Step D: Execute
-            print("🚀 Launching Ollama installer...")
-            # Try silent first
-            exit_code = os.system(f'"{setup_file}" /silent')
+            # Step E: Execute
+            print(f"🚀 Launching Ollama installer (Forcing J: drive)...")
+            # Force installation directory to our smart drive
+            install_dir = os.path.join(download_path, "Ollama")
+            os.makedirs(install_dir, exist_ok=True)
+            
+            # Using /DIR flag for Inno Setup (which Ollama uses)
+            cmd = f'"{setup_file}" /silent /DIR="{install_dir}"'
+            print(f"⚙️ Command: {cmd}")
+            exit_code = os.system(cmd)
             
             if exit_code != 0:
                 print(f"⚠️ Silent install returned {exit_code}. Launching Interactive Mode...")
-                print("👉 Please click 'Install' in the window that appears.")
-                # Fallback to interactive mode (no /silent flag)
-                os.startfile(str(setup_file))
+                print(f"👉 IMPORTANT: Please select {install_dir} as the installation folder if asked.")
+                # Fallback to interactive mode with the directory flag
+                os.system(f'"{setup_file}" /DIR="{install_dir}"')
                 print("⏳ Waiting for you to finish the installation...")
                 
                 # Wait for ollama.exe to appear in the system to confirm install

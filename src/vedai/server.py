@@ -38,10 +38,14 @@ hw = HardwareEngine()
 tools = ToolEngine()
 ctx_mgr = ContextManager()
 
-# [USER OVERRIDE] Force J: Drive Environment if it exists
+# [USER OVERRIDE] Flexible Storage Fallback
 if os.path.exists("J:\\"):
     os.environ["OLLAMA_MODELS"] = r"J:\VedAI_System\Models"
-    print(f"📍 Server strictly using J: Drive models: {os.environ['OLLAMA_MODELS']}")
+elif os.path.exists("I:\\"):
+    os.environ["OLLAMA_MODELS"] = r"I:\VedAI_System\Models"
+else:
+    # Default path (C: is handled by Ollama by default)
+    pass
 
 class ChatRequest(BaseModel):
     message: str
@@ -52,7 +56,8 @@ async def get_status():
     return {
         "status": "ready",
         "hardware": hw.specs,
-        "recommended_model": hw.get_recommended_model()
+        "recommended_model": hw.get_recommended_model(),
+        "installed_models": client.get_installed_models()
     }
 
 @app.post("/chat")

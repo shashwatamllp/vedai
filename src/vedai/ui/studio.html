@@ -23,6 +23,9 @@
             <h1 class="text-xl font-semibold tracking-tight text-white">VedAI <span class="text-blue-500 text-sm font-light">Web Studio</span></h1>
         </div>
         <div class="flex items-center space-x-4">
+            <select id="model-select" class="bg-gray-900/80 border border-white/10 text-white text-xs rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-blue-500 transition-all cursor-pointer">
+                <option value="qwen2.5-coder:1.5b">Loading Models...</option>
+            </select>
             <div id="hw-status" class="flex items-center space-x-3 text-xs bg-gray-900/50 px-3 py-1.5 rounded-full border border-white/5">
                 <span class="flex h-2 w-2 rounded-full bg-green-500"></span>
                 <span id="cpu-load">CPU: 4 Cores</span>
@@ -115,10 +118,11 @@
 
             // Call Backend (FastAPI)
             try {
+                const selectedModel = document.getElementById('model-select').value;
                 const response = await fetch('http://127.0.0.1:8080/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text })
+                    body: JSON.stringify({ message: text, model: selectedModel })
                 });
 
                 const reader = response.body.getReader();
@@ -155,13 +159,24 @@
             }
         }
 
-        // Fetch Hardware Status on Load
+        // Fetch Hardware Status & Models on Load
         async function updateStatus() {
             try {
                 const res = await fetch('http://127.0.0.1:8080/status');
                 const data = await res.json();
                 document.getElementById('cpu-load').innerText = `CPU: ${data.hardware.cpu_cores} Cores`;
                 document.getElementById('ram-load').innerText = `RAM: ${data.hardware.total_ram_gb}GB`;
+                
+                // Populate Models
+                const modelSelect = document.getElementById('model-select');
+                modelSelect.innerHTML = "";
+                data.installed_models.forEach(model => {
+                    const opt = document.createElement('option');
+                    opt.value = model;
+                    opt.innerText = model;
+                    if(model === data.recommended_model) opt.selected = true;
+                    modelSelect.appendChild(opt);
+                });
             } catch (e) {}
         }
         updateStatus();

@@ -56,6 +56,33 @@ class ToolEngine:
         except Exception as e:
             return f"Error executing command: {str(e)}"
 
+    def get_project_tree(self) -> str:
+        """Returns a tree view of the entire project."""
+        tree = []
+        for root, dirs, files in os.walk(self.root_dir):
+            if '.git' in dirs: dirs.remove('.git')
+            if '__pycache__' in dirs: dirs.remove('__pycache__')
+            level = Path(root).relative_to(self.root_dir).parts
+            indent = '  ' * len(level)
+            tree.append(f"{indent}📁 {os.path.basename(root)}/")
+            for f in files:
+                tree.append(f"{indent}  📄 {f}")
+        return "\n".join(tree)
+
+    def search_code(self, query: str) -> str:
+        """Searches for a string across all project files."""
+        results = []
+        for root, _, files in os.walk(self.root_dir):
+            for file in files:
+                if file.endswith(('.py', '.js', '.html', '.css', '.md', '.toml')):
+                    path = Path(root) / file
+                    try:
+                        content = path.read_text(encoding='utf-8')
+                        if query.lower() in content.lower():
+                            results.append(str(path.relative_to(self.root_dir)))
+                    except: pass
+        return "Found in:\n" + "\n".join(results) if results else "No matches found."
+
     def get_tool_definitions(self) -> str:
         """Returns the prompt-friendly definitions of available tools."""
         return """
@@ -64,8 +91,10 @@ Available Tools:
 2. `read_file(path)`: Read file content.
 3. `write_file(path, content)`: Write/Over-write file content.
 4. `execute_shell(command)`: Run a terminal command.
+5. `get_project_tree()`: Get entire project structure.
+6. `search_code(query)`: Search for text across codebase.
 
 To use a tool, respond in this format:
-THOUGHT: Why you are using this tool.
+THOUGHT: [Reasoning]
 TOOL: tool_name(arguments)
 """

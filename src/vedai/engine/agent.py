@@ -89,6 +89,10 @@ class AgentLoop:
                 return "Error: write_file requires path and content."
             elif name == "execute_shell":
                 return self.tools.execute_shell(args_str.strip("'\" "))
+            elif name == "get_project_tree":
+                return self.tools.get_project_tree()
+            elif name == "search_code":
+                return self.tools.search_code(args_str.strip("'\" "))
             else:
                 return f"Error: Tool {name} not found."
         except Exception as e:

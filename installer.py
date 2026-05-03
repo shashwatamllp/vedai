@@ -36,9 +36,12 @@ def perform_deep_cleanup():
                         shutil.rmtree(path, ignore_errors=True)
                     except: pass
     print("✅ System is now a Clean Slate.")
-    # Force kill any lingering python processes to avoid lock errors
+    # Force kill only OTHER lingering python processes to avoid lock errors
     try:
-        os.system("taskkill /F /IM python.exe /T >nul 2>&1")
+        current_pid = os.getpid()
+        for proc in psutil.process_iter(['pid', 'name']):
+            if proc.info['name'] == 'python.exe' and proc.info['pid'] != current_pid:
+                proc.kill()
         time.sleep(1)
     except: pass
 

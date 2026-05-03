@@ -77,39 +77,33 @@ def chat(
     VedUI.update_header(layout)
     VedUI.update_sidebar(layout, hw.specs, selected_model)
     VedUI.update_main(layout, "Welcome to VedAI Prime. Type your query below.")
-    # Simplified Chat Loop for Windows Stability
+    # Optimized Chat Loop (Stable & Fast)
     try:
         while True:
-            # 1. Get User Input (Outside Live)
-            console.print("\n[bold cyan]User:[/bold cyan] ", end="")
-            query = input()
+            console.print("\n" + "="*50)
+            query = console.input("[bold cyan]User:[/bold cyan] ")
             
             if query.lower() in ["exit", "quit"]:
                 break
                 
-            system_prompt = get_system_prompt(ctx_mgr)
-            
-            # 2. Start Live Display for AI Response
-            with Live(layout, refresh_per_second=4, screen=False) as live:
-                VedUI.update_footer(layout, "Agent Thinking...")
-                
-                # Smart Symbol Indexing
+            # Smart Context (Optimized)
+            with console.status("[bold yellow]VedAI is thinking...[/bold yellow]"):
                 files = ctx_mgr.scan()
                 ctx_mgr.graph.index_project(files)
+                
+                system_prompt = get_system_prompt(ctx_mgr)
                 words = query.split()
                 graph_context = str(ctx_mgr.graph.get_context_for_agent(words))
-                full_system_prompt = str(system_prompt) + graph_context
-
+                full_system_prompt = str(system_prompt)[:4000] + "\n" + graph_context
+                
+                console.print("\n[bold green]VedAI Prime:[/bold green]")
                 response_text = ""
                 for chunk in agent.run(query, full_system_prompt):
                     response_text += chunk
-                    VedUI.update_main(layout, Markdown(response_text))
-                    live.refresh()
+                    # Simple streaming print for stability
+                    console.print(chunk, end="")
                 
-                VedUI.update_footer(layout, "Response Ready")
-            
-            # 3. Print a separator for clarity
-            console.print("-" * 50)
+                console.print("\n" + "-"*50)
 
     except KeyboardInterrupt:
         console.print("\n[yellow]Session Ended.[/yellow]")

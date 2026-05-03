@@ -53,11 +53,15 @@ class ChatRequest(BaseModel):
 
 @app.get("/status")
 async def get_status():
+    models = client.get_installed_models()
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        models.extend(["claude-3-5-sonnet-20240620", "claude-3-opus-20240229"])
+    
     return {
         "status": "ready",
         "hardware": hw.specs,
         "recommended_model": hw.get_recommended_model(),
-        "installed_models": client.get_installed_models()
+        "installed_models": models
     }
 
 @app.post("/chat")

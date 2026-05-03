@@ -18,6 +18,9 @@ class AgentLoop:
         self.model = model
 
     async def run(self, user_query: str, system_prompt: str) -> AsyncGenerator[str, None]:
+        # Choose provider
+        is_claude = self.model.startswith("claude-")
+        
         history = [
             {"role": "system", "content": system_prompt + "\n" + self.tools.get_tool_definitions() + 
              "\nINSTRUCTIONS: You are a local autonomous coding agent. Use tools to explore the codebase and fulfill requests. "
@@ -32,16 +35,29 @@ class AgentLoop:
             current_step += 1
             full_response = ""
             
-            # Get response from LLM using chat API (structured messages)
             try:
-                async for chunk in self.client.chat_async(self.model, history):
-                    # Extract from 'message' -> 'content' (Ollama Chat API format)
-                    msg = chunk.get("message", {})
-                    text = msg.get("content", "")
-                    full_response += text
-                    yield text
+                if is_claude:
+                    import anthropic
+                    client = anthropic.AsyncAnthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+                    # Note: Claude expects a slightly different format, but we'll adapt for simplicity
+                    async with client.messages.stream(
+                        model=self.model,
+                        max_tokens=4096,
+                        system=history[0]["content"],
+                        messages=[{"role": "user", "content": user_query}]
+                    ) as stream:
+                        async for text in stream.text_stream:
+                            full_response += text
+                            yield text
+                else:
+                    # Ollama (Local)
+                    async for chunk in self.client.chat_async(self.model, history):
+                        msg = chunk.get("message", {})
+                        text = msg.get("content", "")
+                        full_response += text
+                        yield text
             except Exception as e:
-                yield f"\n[bold red]Error communicating with Ollama:[/bold red] {str(e)}"
+                yield f"\n[bold red]Error communicating with Provider:[/bold red] {str(e)}"
                 break
 
             # Parse tool calls: TOOL: tool_name(args)

@@ -19,7 +19,9 @@ class AgentLoop:
 
     def run(self, user_query: str, system_prompt: str) -> Generator[str, None, None]:
         history = [
-            {"role": "system", "content": system_prompt + "\n" + self.tools.get_tool_definitions()},
+            {"role": "system", "content": system_prompt + "\n" + self.tools.get_tool_definitions() + 
+             "\nINSTRUCTIONS: You are a local autonomous coding agent. Use tools to explore the codebase and fulfill requests. "
+             "Always use THOUGHT before using a TOOL. If you have the answer, provide it directly without TOOL calls."},
             {"role": "user", "content": user_query}
         ]
         

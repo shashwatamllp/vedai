@@ -9,6 +9,8 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, Downlo
 from vedai.engine.hardware import HardwareEngine
 from vedai.engine.ollama import OllamaClient
 from vedai.engine.context import ContextManager
+from vedai.engine.agent import AgentLoop
+from vedai.engine.tools import ToolEngine
 from vedai.ui.dashboard import VedUI
 
 app = typer.Typer(help="VedAI: High-level Local AI Assistant")
@@ -38,6 +40,9 @@ def chat(
     
     selected_model = model or hw.get_recommended_model()
     VedUI.hardware_report(hw.specs, selected_model)
+    
+    tools = ToolEngine()
+    agent = AgentLoop(client, tools, selected_model)
     
     # Check if model is pulled
     if selected_model not in client.get_installed_models():

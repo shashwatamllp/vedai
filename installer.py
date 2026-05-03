@@ -179,12 +179,6 @@ def main():
     install_path = os.path.join(best_drive, "VedAI_System")
     os.makedirs(install_path, exist_ok=True)
     
-    # Redirect System TEMP/TMP to our drive with space globally
-    custom_temp = os.path.join(install_path, "Temp")
-    os.makedirs(custom_temp, exist_ok=True)
-    os.environ["TEMP"] = custom_temp
-    os.environ["TMP"] = custom_temp
-    
     # 1. Cleanup
     perform_deep_cleanup()
     

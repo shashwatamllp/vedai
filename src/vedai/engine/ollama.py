@@ -1,4 +1,4 @@
-import requests
+import httpx
 import json
 import logging
 from typing import Generator
@@ -9,42 +9,33 @@ class OllamaClient:
     """
     Robust Ollama API client for model management and inference.
     """
-    BASE_URL = "http://localhost:11434/api"
-
-    def __init__(self):
-        self.verify_service()
-
-    def verify_service(self):
-        try:
-            response = requests.get(f"{self.BASE_URL}/tags", timeout=3)
-            response.raise_for_status()
-        except Exception:
-            raise ConnectionError("Ollama service is not reachable. Is it running?")
+    def __init__(self, base_url: str = "http://localhost:11434"):
+        self.base_url = base_url
 
     def get_installed_models(self) -> list:
-        response = requests.get(f"{self.BASE_URL}/tags")
-        return [m['name'] for m in response.json().get('models', [])]
+        try:
+            import requests
+            response = requests.get(f"{self.base_url}/api/tags", timeout=3)
+            return [m['name'] for m in response.json().get('models', [])]
+        except:
+            return []
 
     def pull_model(self, name: str) -> Generator[dict, None, None]:
-        url = f"{self.BASE_URL}/pull"
-        with requests.post(url, json={"name": name}, stream=True) as response:
+        url = f"{self.base_url}/api/pull"
+        with httpx.stream("POST", url, json={"name": name}, timeout=None) as response:
             for line in response.iter_lines():
                 if line:
                     yield json.loads(line)
 
     def chat(self, model: str, messages: list) -> Generator[dict, None, None]:
-        url = f"{self.BASE_URL}/chat"
+        """Streaming chat using httpx for async-friendly output."""
+        url = f"{self.base_url}/api/chat"
         payload = {
             "model": model,
             "messages": messages,
             "stream": True
         }
-        with requests.post(url, json=payload, stream=True) as response:
+        with httpx.stream("POST", url, json=payload, timeout=None) as response:
             for line in response.iter_lines():
                 if line:
-                    chunk = json.loads(line)
-                    msg = chunk.get("message", {})
-                    yield {
-                        "response": msg.get("content", ""),
-                        "done": chunk.get("done", False)
-                    }
+                    yield json.loads(line)

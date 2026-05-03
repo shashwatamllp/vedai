@@ -27,7 +27,8 @@ dependencies = [
     "tree-sitter",
     "tree-sitter-languages",
     "fastapi",
-    "uvicorn"
+    "uvicorn",
+    "httpx"
 ]
 
 [project.scripts]

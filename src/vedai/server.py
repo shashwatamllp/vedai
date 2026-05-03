@@ -58,11 +58,11 @@ async def chat_endpoint(req: ChatRequest):
     files = ctx_mgr.scan()
     ctx_mgr.graph.index_project(files)
     
-    # Build System Prompt
+    # Build System Prompt (Truncated for speed)
     project_context = ctx_mgr.build_context()
     system_prompt = (
         "You are VedAI Web Studio. Provide expert coding help.\n"
-        f"Context: {project_context}"
+        f"Context: {str(project_context)[:4000]}"
     )
 
     async def event_generator():

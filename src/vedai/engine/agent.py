@@ -35,7 +35,9 @@ class AgentLoop:
             # Get response from LLM using chat API (structured messages)
             try:
                 for chunk in self.client.chat(self.model, history):
-                    text = chunk.get("response", "")
+                    # Extract from 'message' -> 'content' (Ollama Chat API format)
+                    msg = chunk.get("message", {})
+                    text = msg.get("content", "")
                     full_response += text
                     yield text
             except Exception as e:

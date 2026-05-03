@@ -45,15 +45,33 @@ def chat(
     agent = AgentLoop(client, tools, selected_model)
     
     # Check if model is pulled
-    if selected_model not in client.get_installed_models():
-        console.print(f"[yellow]Model '{selected_model}' not found. Pulling...[/yellow]")
-        with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), BarColumn(), transient=True) as progress:
-            task = progress.add_task(f"Pulling {selected_model}", total=100)
-            for chunk in client.pull_model(selected_model):
-                completed = chunk.get("completed", 0)
-                total = chunk.get("total", 1)
-                if total > 0:
-                    progress.update(task, completed=completed, total=total)
+    installed = client.get_installed_models()
+    if selected_model not in installed and (selected_model + ":latest") not in installed:
+        console.print(f"[yellow]📥 Model '{selected_model}' not found. Initializing High-Speed Pull...[/yellow]")
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            DownloadColumn(),
+            transient=False
+        ) as progress:
+            task = progress.add_task(f"Downloading {selected_model}", total=100)
+            try:
+                for chunk in client.pull_model(selected_model):
+                    status = chunk.get("status", "")
+                    completed = chunk.get("completed", 0)
+                    total = chunk.get("total", 0)
+                    
+                    if total > 0:
+                        progress.update(task, completed=completed, total=total, description=f"Pulling: {status}")
+                    else:
+                        progress.update(task, description=f"Status: {status}")
+                
+                progress.update(task, description="✅ Download Complete!")
+            except Exception as e:
+                console.print(f"[red]Failed to pull model: {e}[/red]")
+                # Fallback to background pull if progress fails
+                subprocess.run(["ollama", "pull", selected_model], capture_output=True)
 
     layout = VedUI.get_layout()
     VedUI.update_header(layout)

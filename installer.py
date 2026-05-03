@@ -252,8 +252,17 @@ def main():
         pull_result = subprocess.run(["ollama", "pull", model], capture_output=True, text=True)
         if "device" in pull_result.stderr.lower() or "exist" in pull_result.stderr.lower():
             print("\n⚠️ J: Drive Failure Detected. Reverting to C: drive for models...")
+            # Clear persistent variable
             subprocess.run('setx OLLAMA_MODELS ""', shell=True, capture_output=True)
             os.environ["OLLAMA_MODELS"] = ""
+            
+            # [CRITICAL] Restart Ollama AGAIN to pick up the cleared environment
+            print("🔄 Force-Restarting Ollama for Storage Migration...")
+            os.system("taskkill /F /IM ollama.exe /T >nul 2>&1")
+            time.sleep(2)
+            subprocess.Popen(["ollama", "serve"], creationflags=subprocess.CREATE_NEW_CONSOLE)
+            time.sleep(5)
+            
             print("🔄 Retrying pull on C: drive (Default path)...")
             subprocess.run(["ollama", "pull", model])
         elif pull_result.returncode != 0:

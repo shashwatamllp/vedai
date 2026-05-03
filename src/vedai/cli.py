@@ -140,6 +140,13 @@ def studio():
     import webbrowser
     import uvicorn
     
+    # [STORAGE SAFETY] Ensure OLLAMA_MODELS path is valid
+    om_path = os.environ.get("OLLAMA_MODELS", "")
+    if om_path and not os.path.exists(om_path):
+        console.print("[yellow]⚠️ Detected broken model storage path. Reverting to C: drive...[/yellow]")
+        os.environ["OLLAMA_MODELS"] = ""
+        subprocess.run('setx OLLAMA_MODELS ""', shell=True, capture_output=True)
+    
     console.print("\n" + "="*50)
     console.print("🚀 [bold cyan]LAUNCHING VED-AI PREMIUM STUDIO[/bold cyan]")
     console.print("📍 URL: [bold green]http://127.0.0.1:8080[/bold green]")

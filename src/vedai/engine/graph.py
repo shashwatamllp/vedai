@@ -33,12 +33,12 @@ class SymbolGraph:
             conn.execute("CREATE INDEX IF NOT EXISTS idx_symbol_name ON symbols(name)")
 
     def index_project(self, files: list):
-        """Scans and indexes all project files."""
+        """Scans and indexes all project files silently."""
         for file_path in files:
             try:
                 self.index_file(file_path)
-            except Exception as e:
-                logger.error(f"Failed to index {file_path}: {e}")
+            except:
+                pass
 
     def index_file(self, file_path: Path):
         ext = file_path.suffix
@@ -67,8 +67,11 @@ class SymbolGraph:
             (method_definition name: (property_identifier) @name) @method
             """
 
-        query = language.query(query_scm)
-        captures = query.captures(tree.root_node)
+        try:
+            query = language.query(query_scm)
+            captures = query.captures(tree.root_node)
+        except:
+            return
 
         with sqlite3.connect(self.db_path) as conn:
             for node, tag in captures:

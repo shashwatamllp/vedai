@@ -99,13 +99,6 @@ def setup_ollama(download_path):
             
             print(f"\n📥 Download Complete. size: {os.path.getsize(setup_file) // 1024**2} MB")
             
-            # Step C: Redirect System TEMP/TMP to our drive with space
-            custom_temp = os.path.join(download_path, "Temp")
-            os.makedirs(custom_temp, exist_ok=True)
-            os.environ["TEMP"] = custom_temp
-            os.environ["TMP"] = custom_temp
-            print(f"🌡️ Redirecting temporary files to: {custom_temp}")
-
             # Step D: Cleanup existing processes
             print("🧹 Cleaning up any existing Ollama processes...")
             os.system("taskkill /F /IM ollama.exe /T >nul 2>&1")
@@ -167,13 +160,20 @@ def setup_ollama(download_path):
 def main():
     print_banner()
     
-    # 1. Cleanup
-    perform_deep_cleanup()
-    
-    # 2. Drive Selection
+    # 0. Global Setup
     best_drive = get_best_drive()
     install_path = os.path.join(best_drive, "VedAI_System")
     os.makedirs(install_path, exist_ok=True)
+    
+    # Redirect System TEMP/TMP to our drive with space globally
+    custom_temp = os.path.join(install_path, "Temp")
+    os.makedirs(custom_temp, exist_ok=True)
+    os.environ["TEMP"] = custom_temp
+    os.environ["TMP"] = custom_temp
+    
+    # 1. Cleanup
+    perform_deep_cleanup()
+    
     print(f"🚀 Installation Target: {install_path} ({psutil.disk_usage(best_drive).free // (1024**3)} GB Free)")
 
     # 3. Ollama Setup
@@ -183,7 +183,12 @@ def main():
     # 4. App & Environment Setup
     print("📦 [STAGE 3] Building Private Environment & Dependencies...")
     venv_path = os.path.join(install_path, "venv")
-    subprocess.run([sys.executable, "-m", "venv", venv_path], check=True)
+    try:
+        # Use --copies for better reliability on different drives
+        subprocess.run([sys.executable, "-m", "venv", "--copies", venv_path], check=True)
+    except Exception as e:
+        print(f"⚠️ Venv creation failed: {e}. Trying simple venv...")
+        subprocess.run([sys.executable, "-m", "venv", venv_path], check=True)
     
     pip_exe = os.path.join(venv_path, "Scripts", "pip.exe")
     python_exe = os.path.join(venv_path, "Scripts", "python.exe")

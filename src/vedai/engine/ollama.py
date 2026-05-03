@@ -28,14 +28,27 @@ class OllamaClient:
                     yield json.loads(line)
 
     def chat(self, model: str, messages: list) -> Generator[dict, None, None]:
-        """Streaming chat using httpx for async-friendly output."""
+        """Streaming chat using httpx with robust error handling."""
         url = f"{self.base_url}/api/chat"
         payload = {
             "model": model,
             "messages": messages,
             "stream": True
         }
-        with httpx.stream("POST", url, json=payload, timeout=None) as response:
-            for line in response.iter_lines():
-                if line:
-                    yield json.loads(line)
+        try:
+            with httpx.stream("POST", url, json=payload, timeout=None) as response:
+                if response.status_code != 200:
+                    # [EMERGENCY FALLBACK] If storage error occurs, tell the user
+                    yield {"message": {"content": f"⚠️ Ollama Error ({response.status_code}). Storage drive might be disconnected."}}
+                    return
+                
+                for line in response.iter_lines():
+                    if line:
+                        chunk = json.loads(line)
+                        yield chunk
+        except Exception as e:
+            # Check for disk/device errors
+            if "device" in str(e).lower() or "exist" in str(e).lower():
+                yield {"message": {"content": "❌ Critical Storage Error: J: drive disconnected. Re-run installer to fix."}}
+            else:
+                yield {"message": {"content": f"❌ Connection Error: {str(e)}"}}

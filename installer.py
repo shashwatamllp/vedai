@@ -239,11 +239,16 @@ def main():
         hw = HardwareEngine()
         model = hw.get_recommended_model()
         print(f"📦 [STAGE 4] Hardware detected: {hw.specs.total_ram_gb}GB RAM. Auto-pulling {model}...")
-        try:
-            # Run pull in a way that shows progress but doesn't block completion of installer if it takes long
-            subprocess.run(["ollama", "pull", model], check=False)
-        except:
-            print("⚠️ Background pull initiated. It will continue in the background.")
+        
+        pull_result = subprocess.run(["ollama", "pull", model], capture_output=True, text=True)
+        if "device" in pull_result.stderr.lower() or "exist" in pull_result.stderr.lower():
+            print("\n⚠️ J: Drive Failure Detected. Reverting to C: drive for models...")
+            subprocess.run('setx OLLAMA_MODELS ""', shell=True, capture_output=True)
+            os.environ["OLLAMA_MODELS"] = ""
+            print("🔄 Retrying pull on C: drive (Default path)...")
+            subprocess.run(["ollama", "pull", model])
+        elif pull_result.returncode != 0:
+            print(f"⚠️ Pull error: {pull_result.stderr}")
 
     # 6. VS Code Integration
     if VSCodeManager:

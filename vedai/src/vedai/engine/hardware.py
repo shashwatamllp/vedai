@@ -51,10 +51,10 @@ class HardwareEngine:
 
     def get_recommended_model(self) -> str:
         if self.specs.vram_gb >= 12:
-            return "deepseek-coder-v2"
+            return "qwen2.5-coder:14b"
         elif self.specs.vram_gb >= 6 or self.specs.total_ram_gb >= 16:
-            return "llama3:8b"
+            return "qwen2.5-coder:7b"
         elif self.specs.total_ram_gb >= 8:
-            return "mistral"
+            return "qwen2.5-coder:1.5b"
         else:
             return "phi3:mini"

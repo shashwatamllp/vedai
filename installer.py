@@ -58,7 +58,8 @@ def setup_ollama(download_path):
     except:
         print("❌ Ollama not found. Starting Autonomous Download...")
         url = "https://ollama.com/download/OllamaSetup.exe"
-        setup_file = os.path.abspath(os.path.join(download_path, "OllamaSetup.exe"))
+        # ALWAYS download to the local folder first to avoid drive-specific errors
+        setup_file = os.path.abspath("OllamaSetup.exe")
         
         try:
             print(f"📥 Downloading to: {setup_file}")

@@ -17,7 +17,7 @@ class AgentLoop:
         self.tools = tools
         self.model = model
 
-    def run(self, user_query: str, system_prompt: str) -> Generator[str, None, None]:
+    async def run(self, user_query: str, system_prompt: str) -> AsyncGenerator[str, None]:
         history = [
             {"role": "system", "content": system_prompt + "\n" + self.tools.get_tool_definitions() + 
              "\nINSTRUCTIONS: You are a local autonomous coding agent. Use tools to explore the codebase and fulfill requests. "
@@ -34,7 +34,7 @@ class AgentLoop:
             
             # Get response from LLM using chat API (structured messages)
             try:
-                for chunk in self.client.chat(self.model, history):
+                async for chunk in self.client.chat_async(self.model, history):
                     # Extract from 'message' -> 'content' (Ollama Chat API format)
                     msg = chunk.get("message", {})
                     text = msg.get("content", "")

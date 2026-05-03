@@ -91,14 +91,14 @@ async def chat_endpoint(req: ChatRequest):
                 return
 
             # Now run the actual chat
-            for chunk in agent.run(req.message, system_prompt):
+            async for chunk in agent.run(req.message, system_prompt):
                 yield f"data: {json.dumps({'text': chunk})}\n\n"
             yield "data: [DONE]\n\n"
         
         return StreamingResponse(pull_and_stream(), media_type="text/event-stream")
 
     async def event_generator():
-        for chunk in agent.run(req.message, system_prompt):
+        async for chunk in agent.run(req.message, system_prompt):
             yield f"data: {json.dumps({'text': chunk})}\n\n"
         yield "data: [DONE]\n\n"
 

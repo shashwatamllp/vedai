@@ -63,37 +63,32 @@ def setup_ollama(download_path):
         try:
             print(f"📥 Downloading to: {setup_file}")
             
-            # Step A: Check if directory is writable
-            try:
-                with open(setup_file, "wb") as f:
-                    pass
-            except Exception as e:
-                print(f"⚠️ Primary path not writable, trying local folder: {e}")
-                setup_file = os.path.abspath("OllamaSetup.exe")
-                print(f"📥 New download path: {setup_file}")
+            # Step A: Progress hook for urllib
+            def progress_hook(count, block_size, total_size):
+                if total_size > 0:
+                    downloaded = count * block_size
+                    done = int(50 * downloaded / total_size)
+                    sys.stdout.write(f"\r[{'=' * done}{' ' * (50-done)}] {downloaded//(1024*1024)}MB/{total_size//(1024*1024)}MB")
+                    sys.stdout.flush()
 
-            # Step B: Start Download
-            response = requests.get(url, stream=True, timeout=60)
-            response.raise_for_status()
+            # Step B: Use urllib for low-level reliable download
+            import urllib.request
+            opener = urllib.request.build_opener()
+            opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+            urllib.request.install_opener(opener)
             
-            total_size = int(response.headers.get('content-length', 0))
-            downloaded = 0
-            
-            with open(setup_file, "wb") as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
-                        downloaded += len(chunk)
-                        if total_size > 0:
-                            done = int(50 * downloaded / total_size)
-                            sys.stdout.write(f"\r[{'=' * done}{' ' * (50-done)}] {downloaded//(1024*1024)}MB/{total_size//(1024*1024)}MB")
-                            sys.stdout.flush()
+            urllib.request.urlretrieve(url, setup_file, reporthook=progress_hook)
             
             print(f"\n📥 Download Complete. size: {os.path.getsize(setup_file) // 1024**2} MB")
             
             # Step C: Execute
             print("🚀 Launching Ollama installer...")
-            subprocess.run([setup_file, "/silent"], check=True, shell=True)
+            # Use os.system as the absolute most basic way to trigger an exe on Windows
+            exit_code = os.system(f'"{setup_file}" /silent')
+            if exit_code != 0:
+                print(f"⚠️ Installer exited with code {exit_code}, trying direct launch...")
+                subprocess.run([setup_file, "/silent"], check=True)
+            
             print("✅ Ollama installed successfully.")
             time.sleep(5)
         except Exception as e:

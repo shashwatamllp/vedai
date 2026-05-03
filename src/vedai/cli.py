@@ -1,6 +1,9 @@
 import typer
 import logging
 import subprocess
+import re
+import os
+import psutil
 from typing import Optional
 from rich.console import Console
 from rich.live import Live

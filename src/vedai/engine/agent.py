@@ -33,10 +33,14 @@ class AgentLoop:
             full_response = ""
             
             # Get response from LLM using chat API (structured messages)
-            for chunk in self.client.chat(self.model, history):
-                text = chunk.get("response", "")
-                full_response += text
-                yield text
+            try:
+                for chunk in self.client.chat(self.model, history):
+                    text = chunk.get("response", "")
+                    full_response += text
+                    yield text
+            except Exception as e:
+                yield f"\n[bold red]Error communicating with Ollama:[/bold red] {str(e)}"
+                break
 
             # Parse tool calls: TOOL: tool_name(args)
             tool_match = re.search(r"TOOL:\s*(\w+)\((.*)\)", full_response)

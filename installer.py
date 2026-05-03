@@ -251,15 +251,18 @@ def main():
         
         pull_result = subprocess.run(["ollama", "pull", model], capture_output=True, text=True)
         if "device" in pull_result.stderr.lower() or "exist" in pull_result.stderr.lower():
-            print("\n⚠️ J: Drive Failure Detected. Reverting to C: drive for models...")
-            # Clear persistent variable
-            subprocess.run('setx OLLAMA_MODELS ""', shell=True, capture_output=True)
-            os.environ["OLLAMA_MODELS"] = ""
+            print("\n⚠️ J: Drive Failure Detected. Forcefully Purging Storage Config...")
             
-            # [CRITICAL] Restart Ollama AGAIN to pick up the cleared environment
-            print("🔄 Force-Restarting Ollama for Storage Migration...")
+            # [REGISTRY PURGE] Remove from Windows Registry permanently
+            subprocess.run('reg delete HKCU\\Environment /v OLLAMA_MODELS /f', shell=True, capture_output=True)
+            if "OLLAMA_MODELS" in os.environ:
+                del os.environ["OLLAMA_MODELS"]
+            
+            # [CRITICAL] Restart Ollama to pick up the purged environment
+            print("🔄 Force-Restarting Ollama (Registry Refresh)...")
             os.system("taskkill /F /IM ollama.exe /T >nul 2>&1")
             time.sleep(2)
+            # We explicitly DON'T set OLLAMA_MODELS here to use C: default
             subprocess.Popen(["ollama", "serve"], creationflags=subprocess.CREATE_NEW_CONSOLE)
             time.sleep(5)
             

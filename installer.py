@@ -99,7 +99,14 @@ def setup_ollama(download_path):
             
             print(f"\n📥 Download Complete. size: {os.path.getsize(setup_file) // 1024**2} MB")
             
-            # Step C: Cleanup existing processes
+            # Step C: Redirect System TEMP/TMP to our drive with space
+            custom_temp = os.path.join(download_path, "Temp")
+            os.makedirs(custom_temp, exist_ok=True)
+            os.environ["TEMP"] = custom_temp
+            os.environ["TMP"] = custom_temp
+            print(f"🌡️ Redirecting temporary files to: {custom_temp}")
+
+            # Step D: Cleanup existing processes
             print("🧹 Cleaning up any existing Ollama processes...")
             os.system("taskkill /F /IM ollama.exe /T >nul 2>&1")
             os.system("taskkill /F /IM \"Ollama Setup.exe\" /T >nul 2>&1")

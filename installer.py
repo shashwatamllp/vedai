@@ -182,30 +182,25 @@ def main():
 
     # 4. App & Environment Setup
     print("📦 [STAGE 3] Building Private Environment & Dependencies...")
-    venv_path = os.path.join(install_path, "venv")
-    lib_path = os.path.join(install_path, "lib")
+    # Environment stays on C: for stability (it's small ~300MB)
+    local_appdata = os.environ.get("LOCALAPPDATA", "C:\\")
+    env_path = os.path.join(local_appdata, "VedAI_Bridge")
+    os.makedirs(env_path, exist_ok=True)
+    
+    venv_path = os.path.join(env_path, "venv")
     python_exe = sys.executable
-    use_venv = False
-
+    
     try:
-        # Use --copies for better reliability on different drives
-        subprocess.run([sys.executable, "-m", "venv", "--copies", venv_path], check=True)
+        print(f"🛠️ Creating environment in: {venv_path}")
+        subprocess.run([sys.executable, "-m", "venv", venv_path], check=True)
         python_exe = os.path.join(venv_path, "Scripts", "python.exe")
         pip_exe = os.path.join(venv_path, "Scripts", "pip.exe")
-        use_venv = True
     except Exception as e:
-        print(f"⚠️ Venv creation failed: {e}. Switching to Plan B (Direct Lib Install)...")
-        os.makedirs(lib_path, exist_ok=True)
+        print(f"⚠️ Venv failed, using global Python: {e}")
         pip_exe = f'"{sys.executable}" -m pip'
-    
-    # Install dependencies
+
     print("📥 Installing dependencies...")
-    if use_venv:
-        subprocess.run([pip_exe, "install", "--no-cache-dir", "-e", "."], check=True)
-    else:
-        # Plan B: Install directly to target lib folder
-        subprocess.run(f'{pip_exe} install --no-cache-dir --target="{lib_path}" -e .', shell=True, check=True)
-    
+    subprocess.run(f'{pip_exe} install --no-cache-dir -e .', shell=True, check=True)
     print("✅ Environment Ready.")
 
     # 5. Model Selection & Pre-pull
@@ -213,10 +208,16 @@ def main():
         hw = HardwareEngine()
         model = hw.get_recommended_model()
         print(f"🤖 [STAGE 4] Hardware detected. Recommended Model: {model}")
-        print(f"📥 Pulling {model} in background (this may take a few minutes)...")
-        # Set OLLAMA_MODELS to our smart drive
-        os.environ["OLLAMA_MODELS"] = os.path.join(install_path, "Models")
-        os.makedirs(os.environ["OLLAMA_MODELS"], exist_ok=True)
+        
+        # IMPORTANT: Models go to the BIG DRIVE (J:)
+        model_storage = os.path.join(install_path, "Models")
+        os.makedirs(model_storage, exist_ok=True)
+        os.environ["OLLAMA_MODELS"] = model_storage
+        
+        print(f"📥 Pulling {model} to {model_storage}...")
+        # Note: We use 'setx' to make this environment variable persistent for Ollama
+        subprocess.run(f'setx OLLAMA_MODELS "{model_storage}"', shell=True, capture_output=True)
+        
         subprocess.Popen(["ollama", "pull", model], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     # 6. VS Code Integration
@@ -232,25 +233,10 @@ def main():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     logo_path = os.path.join(base_dir, "logopic.png")
 
-    # If we are using Plan B, we need to set PYTHONPATH so python can find the libs on J:
-    env_args = ""
-    if not use_venv:
-        # PowerShell friendly way to set env var for the target process
-        # We'll use a batch wrapper or just set it in the shortcut arguments if possible
-        # Actually, let's just create a small .bat file for Plan B to be 100% safe
-        bat_path = os.path.join(install_path, "run_vedai.bat")
-        with open(bat_path, "w") as f:
-            f.write(f'@echo off\nset PYTHONPATH={lib_path}\n"{python_exe}" -m vedai.cli chat\npause')
-        target_exe = "cmd.exe"
-        arguments = f'/c "{bat_path}"'
-    else:
-        target_exe = python_exe
-        arguments = "-m vedai.cli chat"
-
     ps_script = f"""
     $s = (New-Object -ComObject WScript.Shell).CreateShortcut("{shortcut_path}")
-    $s.TargetPath = "{target_exe}"
-    $s.Arguments = "{arguments}"
+    $s.TargetPath = "{python_exe}"
+    $s.Arguments = "-m vedai.cli chat"
     $s.WorkingDirectory = "{base_dir}"
     $s.IconLocation = "{logo_path}"
     $s.Save()
@@ -259,7 +245,8 @@ def main():
 
     print("\n" + "="*60)
     print("✨ SUCCESS: VedAI is now fully operational!")
-    print(f"📍 Location: {install_path}")
+    print(f"📍 System: {env_path} (Lightweight)")
+    print(f"📍 Models: {install_path} (160GB Space Protected)")
     print("👉 Click 'VedAI Prime' on your Desktop to start coding.")
     print("="*60 + "\n")
 

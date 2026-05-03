@@ -228,20 +228,49 @@ def main():
 
     # 7. Desktop Shortcut
     print("🎨 [STAGE 6] Creating Premium Desktop Shortcut...")
-    desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+    
+    # Smart Desktop Path Detection (Handling OneDrive)
+    def get_desktop_path():
+        import winreg
+        try:
+            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders")
+            path, _ = winreg.QueryValueEx(key, "Desktop")
+            winreg.CloseKey(key)
+            return os.path.expandvars(path)
+        except:
+            return os.path.join(os.path.expanduser("~"), "Desktop")
+
+    desktop = get_desktop_path()
     shortcut_path = os.path.join(desktop, "VedAI Prime.lnk")
     base_dir = os.path.dirname(os.path.abspath(__file__))
     logo_path = os.path.join(base_dir, "logopic.png")
 
+    print(f"📍 Target Desktop: {desktop}")
+
     ps_script = f"""
-    $s = (New-Object -ComObject WScript.Shell).CreateShortcut("{shortcut_path}")
-    $s.TargetPath = "{python_exe}"
-    $s.Arguments = "-m vedai.cli chat"
-    $s.WorkingDirectory = "{base_dir}"
-    $s.IconLocation = "{logo_path}"
-    $s.Save()
+    try {{
+        $s = (New-Object -ComObject WScript.Shell).CreateShortcut("{shortcut_path}")
+        $s.TargetPath = "{python_exe}"
+        $s.Arguments = "-m vedai.cli chat"
+        $s.WorkingDirectory = "{base_dir}"
+        if (Test-Path "{logo_path}") {{ $s.IconLocation = "{logo_path}" }}
+        $s.Save()
+        Write-Output "SUCCESS"
+    }} catch {{
+        Write-Error $_.Exception.Message
+    }}
     """
-    subprocess.run(["powershell", "-Command", ps_script], capture_output=True)
+    result = subprocess.run(["powershell", "-Command", ps_script], capture_output=True, text=True)
+    
+    if "SUCCESS" in result.stdout:
+        print("✅ Desktop Shortcut Created Successfully.")
+    else:
+        print(f"⚠️ Shortcut Error: {result.stderr}")
+        # Fallback: Create a simple BAT file in the project folder
+        bat_path = os.path.join(base_dir, "VedAI_Launcher.bat")
+        with open(bat_path, "w") as f:
+            f.write(f'@echo off\n"{python_exe}" -m vedai.cli chat\npause')
+        print(f"👉 Fallback: Created '{bat_path}'. You can use this to start.")
 
     print("\n" + "="*60)
     print("✨ SUCCESS: VedAI is now fully operational!")

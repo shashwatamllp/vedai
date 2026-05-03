@@ -58,7 +58,7 @@ def setup_ollama(download_path):
     except:
         print("❌ Ollama not found. Starting Autonomous Download...")
         url = "https://ollama.com/download/OllamaSetup.exe"
-        setup_file = os.path.join(download_path, "OllamaSetup.exe")
+        setup_file = Path(download_path) / "OllamaSetup.exe"
         
         try:
             print(f"📥 Downloading to: {setup_file}")
@@ -66,8 +66,13 @@ def setup_ollama(download_path):
             with open(setup_file, "wb") as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
+            
+            if not setup_file.exists():
+                raise FileNotFoundError("Download failed - file not found on disk.")
+                
             print("📥 Download Complete. Installing Ollama (please wait)...")
-            subprocess.run([setup_file, "/silent"], check=True)
+            # Using shell=True and quotes for robust Windows execution
+            subprocess.run(f'"{setup_file}" /silent', shell=True, check=True)
             print("✅ Ollama installed successfully.")
             time.sleep(5)
         except Exception as e:

@@ -58,12 +58,34 @@ async def chat_endpoint(req: ChatRequest):
     files = ctx_mgr.scan()
     ctx_mgr.graph.index_project(files)
     
-    # Build System Prompt (Truncated for speed)
+    # Build System Prompt
     project_context = ctx_mgr.build_context()
     system_prompt = (
         "You are VedAI Web Studio. Provide expert coding help.\n"
         f"Context: {str(project_context)[:4000]}"
     )
+
+    # [AUTONOMOUS RECOVERY] Check if model exists, if not pull it
+    installed = client.get_installed_models()
+    if req.model not in installed and (req.model + ":latest") not in installed:
+        async def pull_and_stream():
+            yield f"data: {json.dumps({'text': '📥 Model missing. Starting Autonomous Pull...'})}\n\n"
+            try:
+                for progress in client.pull_model(req.model):
+                    status = progress.get('status', 'Downloading...')
+                    yield f"data: {json.dumps({'text': f' [dim]Status: {status}[/dim]\n'})}\n\n"
+                yield f"data: {json.dumps({'text': '✅ Pull Complete! Thinking...'})}\n\n"
+            except Exception as e:
+                yield f"data: {json.dumps({'text': f'❌ Pull Failed: {str(e)}'})}\n\n"
+                yield "data: [DONE]\n\n"
+                return
+
+            # Now run the actual chat
+            for chunk in agent.run(req.message, system_prompt):
+                yield f"data: {json.dumps({'text': chunk})}\n\n"
+            yield "data: [DONE]\n\n"
+        
+        return StreamingResponse(pull_and_stream(), media_type="text/event-stream")
 
     async def event_generator():
         for chunk in agent.run(req.message, system_prompt):

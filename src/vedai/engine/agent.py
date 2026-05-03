@@ -37,8 +37,9 @@ class AgentLoop:
             
             # Get response from LLM
             for chunk in self.client.chat(self.model, prompt):
-                full_response += chunk
-                yield chunk
+                text = chunk.get("response", "")
+                full_response += text
+                yield text
 
             # Parse tool calls: TOOL: tool_name(args)
             tool_match = re.search(r"TOOL:\s*(\w+)\((.*)\)", full_response)

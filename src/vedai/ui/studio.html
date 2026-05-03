@@ -115,7 +115,7 @@
 
             // Call Backend (FastAPI)
             try {
-                const response = await fetch('http://localhost:8080/chat', {
+                const response = await fetch('http://127.0.0.1:8080/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: json.stringify({ message: text })
@@ -158,7 +158,7 @@
         // Fetch Hardware Status on Load
         async function updateStatus() {
             try {
-                const res = await fetch('http://localhost:8080/status');
+                const res = await fetch('http://127.0.0.1:8080/status');
                 const data = await res.json();
                 document.getElementById('cpu-load').innerText = `CPU: ${data.hardware.cpu_cores} Cores`;
                 document.getElementById('ram-load').innerText = `RAM: ${data.hardware.total_ram_gb}GB`;

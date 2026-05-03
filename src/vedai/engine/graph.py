@@ -108,8 +108,12 @@ class SymbolGraph:
             return ""
             
         context = ["\n[SYMBOL GRAPH CONTEXT]"]
+        has_results = False
         for sym in detected_symbols:
+            if len(sym) < 3: continue # Skip very short words
             results = self.search_symbol(sym)
             for r in results:
+                has_results = True
                 context.append(f"- {r[1].upper()} '{r[0]}' in {r[2]} (Line {r[3]}): `{r[4]}`")
-        return "\n".join(context)
+        
+        return "\n".join(context) if has_results else ""

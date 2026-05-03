@@ -77,8 +77,8 @@ def chat(
                 
                 # Search for relevant symbols based on query
                 words = query.split()
-                graph_context = ctx_mgr.graph.get_context_for_agent(words)
-                full_system_prompt = system_prompt + graph_context
+                graph_context = str(ctx_mgr.graph.get_context_for_agent(words))
+                full_system_prompt = str(system_prompt) + graph_context
 
                 VedUI.update_footer(layout, "Agent Thinking...")
                 

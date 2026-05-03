@@ -10,6 +10,8 @@ import sys
 # Add src to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+app = FastAPI(title="VedAI Web Studio API")
+
 @app.get("/", response_class=HTMLResponse)
 async def get_studio():
     studio_path = os.path.join(os.path.dirname(__file__), "ui", "studio.html")
@@ -21,8 +23,6 @@ from vedai.engine.hardware import HardwareEngine
 from vedai.engine.context import ContextManager
 from vedai.engine.agent import AgentLoop
 from vedai.engine.tools import ToolEngine
-
-app = FastAPI(title="VedAI Web Studio API")
 
 # Enable CORS for Next.js
 app.add_middleware(
@@ -73,4 +73,4 @@ async def chat_endpoint(req: ChatRequest):
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8080)

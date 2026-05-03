@@ -307,10 +307,16 @@ def main():
     """
     result = subprocess.run(["powershell", "-Command", ps_script], capture_output=True, text=True)
     
-    # Auto-Launch Studio immediately
-    print("🚀 Auto-Launching VedAI Studio on Port 8080...")
+    # 8. Final Refresh & Launch
+    print("🔄 Finalizing AI Engine & Launching Studio...")
     try:
-        # Using cmd /k keeps the window open on error so the user can see it
+        # Final restart to ensure environment sync
+        os.system("taskkill /F /IM ollama.exe /T >nul 2>&1")
+        time.sleep(2)
+        subprocess.Popen(["ollama", "serve"], creationflags=subprocess.CREATE_NEW_CONSOLE)
+        time.sleep(3)
+        
+        # Launch Studio
         launch_cmd = f'start cmd /k "{python_exe}" -m vedai.cli studio'
         subprocess.run(launch_cmd, shell=True)
     except:

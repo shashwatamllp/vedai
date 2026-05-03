@@ -38,6 +38,11 @@ hw = HardwareEngine()
 tools = ToolEngine()
 ctx_mgr = ContextManager()
 
+# [USER OVERRIDE] Force J: Drive Environment if it exists
+if os.path.exists("J:\\"):
+    os.environ["OLLAMA_MODELS"] = r"J:\VedAI_System\Models"
+    print(f"📍 Server strictly using J: Drive models: {os.environ['OLLAMA_MODELS']}")
+
 class ChatRequest(BaseModel):
     message: str
     model: str = "qwen2.5-coder:1.5b"

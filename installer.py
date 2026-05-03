@@ -218,7 +218,7 @@ def main():
         # [STAGE 4] Proactive Model Pulling (Autonomous)
         hw = HardwareEngine()
         model = hw.get_recommended_model()
-        print(f"📦 [STAGE 4] Hardware detected: {hw.specs.ram_gb}GB RAM. Auto-pulling {model}...")
+        print(f"📦 [STAGE 4] Hardware detected: {hw.specs.total_ram_gb}GB RAM. Auto-pulling {model}...")
         try:
             # Run pull in a way that shows progress but doesn't block completion of installer if it takes long
             subprocess.run(["ollama", "pull", model], check=False)

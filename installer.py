@@ -3,33 +3,39 @@ import psutil
 import shutil
 import subprocess
 import sys
+import time
+import requests
 from pathlib import Path
 
-# Add src to path so we can use VSCodeManager
+# Add src to path for VSCodeManager
 sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
 try:
     from vedai.engine.vscode_manager import VSCodeManager
+    from vedai.engine.hardware import HardwareEngine
 except ImportError:
     VSCodeManager = None
+    HardwareEngine = None
 
-def print_privacy_msg():
-    print("\n" + "="*50)
-    print("🔒 PRIVACY GUARANTEE: VedAI is 100% Local.")
-    print("Your code and data NEVER leave your machine.")
-    print("We do not collect any logs or information.")
-    print("="*50 + "\n")
+def print_banner():
+    print("\n" + "="*60)
+    print("🌌  VED-AI: THE AUTONOMOUS LOCAL CODING BRIDGE")
+    print("Developed by Shashwatam Eco-Chie Creations LLP")
+    print("="*60 + "\n")
 
-def check_ollama():
-    print("🔍 Checking for Ollama...")
-    try:
-        # Check if ollama command exists
-        subprocess.run(["ollama", "--version"], capture_output=True, check=True)
-        print("✅ Ollama is installed.")
-        return True
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        print("❌ Ollama not found! VedAI requires Ollama for local AI.")
-        print("🔗 Please download it from: https://ollama.com/download")
-        return False
+def perform_deep_cleanup():
+    print("🧹 [STAGE 1] Performing Deep System Cleanup...")
+    targets = ["vedai", "vedai_apps", "VedAI_System", "vedai_venv"]
+    for part in psutil.disk_partitions():
+        if 'fixed' in part.opts:
+            drive = part.mountpoint
+            for target in targets:
+                path = os.path.join(drive, target)
+                if os.path.exists(path):
+                    try:
+                        print(f"🗑️ Removing old installation: {path}")
+                        shutil.rmtree(path, ignore_errors=True)
+                    except: pass
+    print("✅ System is now a Clean Slate.")
 
 def get_best_drive():
     best_drive = "C:\\"
@@ -44,40 +50,99 @@ def get_best_drive():
             except: pass
     return best_drive
 
-print_privacy_msg()
-if not check_ollama():
-    sys.exit(1)
+def setup_ollama():
+    print("🔍 [STAGE 2] Checking for Ollama Engine...")
+    try:
+        subprocess.run(["ollama", "--version"], capture_output=True, check=True)
+        print("✅ Ollama is already installed.")
+    except:
+        print("❌ Ollama not found. Starting Autonomous Download...")
+        url = "https://ollama.com/download/OllamaSetup.exe"
+        setup_file = os.path.join(os.environ.get("TEMP", "."), "OllamaSetup.exe")
+        
+        try:
+            response = requests.get(url, stream=True)
+            with open(setup_file, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            print("📥 Download Complete. Installing Ollama (please wait)...")
+            subprocess.run([setup_file, "/silent"], check=True)
+            print("✅ Ollama installed successfully.")
+            # Give it a moment to start
+            time.sleep(5)
+        except Exception as e:
+            print(f"❌ Failed to install Ollama: {e}")
+            print("Please install it manually from https://ollama.com")
+            return False
+    return True
 
-best_drive = get_best_drive()
-print(f"🚀 Best Drive Found for Models: {best_drive} ({psutil.disk_usage(best_drive).free // (1024**3)} GB Free)")
+def main():
+    print_banner()
+    
+    # 1. Cleanup
+    perform_deep_cleanup()
+    
+    # 2. Drive Selection
+    best_drive = get_best_drive()
+    install_path = os.path.join(best_drive, "VedAI_System")
+    os.makedirs(install_path, exist_ok=True)
+    print(f"🚀 Installation Target: {install_path} ({psutil.disk_usage(best_drive).free // (1024**3)} GB Free)")
 
-# Setup Smart Path
-base_dir = os.path.dirname(os.path.abspath(__file__))
-logo_path = os.path.join(base_dir, "logopic.png")
+    # 3. Ollama Setup
+    if not setup_ollama():
+        sys.exit(1)
 
-print("📦 Installing Python dependencies...")
-subprocess.run([sys.executable, "-m", "pip", "install", "-e", "."], shell=True)
+    # 4. App & Environment Setup
+    print("📦 [STAGE 3] Building Private Environment & Dependencies...")
+    venv_path = os.path.join(install_path, "venv")
+    subprocess.run([sys.executable, "-m", "venv", venv_path], check=True)
+    
+    pip_exe = os.path.join(venv_path, "Scripts", "pip.exe")
+    python_exe = os.path.join(venv_path, "Scripts", "python.exe")
+    
+    # Install with no-cache to avoid disk issues
+    subprocess.run([pip_exe, "install", "--no-cache-dir", "-e", "."], check=True)
+    print("✅ Environment Ready.")
 
-if VSCodeManager:
-    print("🔌 Integrating with VS Code...")
-    vsc = VSCodeManager()
-    result = vsc.configure_continue()
-    print(result)
+    # 5. Model Selection & Pre-pull
+    if HardwareEngine:
+        hw = HardwareEngine()
+        model = hw.get_recommended_model()
+        print(f"🤖 [STAGE 4] Hardware detected. Recommended Model: {model}")
+        print(f"📥 Pulling {model} in background (this may take a few minutes)...")
+        # Set OLLAMA_MODELS to our smart drive
+        os.environ["OLLAMA_MODELS"] = os.path.join(install_path, "Models")
+        os.makedirs(os.environ["OLLAMA_MODELS"], exist_ok=True)
+        subprocess.Popen(["ollama", "pull", model], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-print("🎨 Creating Desktop Shortcut...")
-desktop = os.path.join(os.path.expanduser("~"), "Desktop")
-shortcut_path = os.path.join(desktop, "VedAI Prime.lnk")
+    # 6. VS Code Integration
+    if VSCodeManager:
+        print("🔌 [STAGE 5] Integrating with VS Code...")
+        vsc = VSCodeManager()
+        print(vsc.configure_continue())
 
-# PowerShell script to create shortcut with logo
-ps_script = f"""
-$s = (New-Object -ComObject WScript.Shell).CreateShortcut("{shortcut_path}")
-$s.TargetPath = "{sys.executable}"
-$s.Arguments = "-m vedai.cli chat"
-$s.WorkingDirectory = "{base_dir}"
-$s.IconLocation = "{logo_path}"
-$s.Save()
-"""
-subprocess.run(["powershell", "-Command", ps_script], capture_output=True)
+    # 7. Desktop Shortcut
+    print("🎨 [STAGE 6] Creating Premium Desktop Shortcut...")
+    desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+    shortcut_path = os.path.join(desktop, "VedAI Prime.lnk")
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    logo_path = os.path.join(base_dir, "logopic.png")
 
-print("\n✨ INSTALLATION COMPLETE! VedAI is now your Local Coding Bridge.")
-print("👉 Click the 'VedAI Prime' icon on your Desktop to start.")
+    ps_script = f"""
+    $s = (New-Object -ComObject WScript.Shell).CreateShortcut("{shortcut_path}")
+    $s.TargetPath = "{python_exe}"
+    $s.Arguments = "-m vedai.cli chat"
+    $s.WorkingDirectory = "{base_dir}"
+    $s.IconLocation = "{logo_path}"
+    $s.Save()
+    """
+    subprocess.run(["powershell", "-Command", ps_script], capture_output=True)
+
+    print("\n" + "="*60)
+    print("✨ SUCCESS: VedAI is now fully operational!")
+    print(f"📍 Location: {install_path}")
+    print("👉 Click 'VedAI Prime' on your Desktop to start coding.")
+    print("="*60 + "\n")
+
+if __name__ == "__main__":
+    main()

@@ -50,7 +50,7 @@ def get_best_drive():
             except: pass
     return best_drive
 
-def setup_ollama():
+def setup_ollama(download_path):
     print("🔍 [STAGE 2] Checking for Ollama Engine...")
     try:
         subprocess.run(["ollama", "--version"], capture_output=True, check=True)
@@ -58,9 +58,10 @@ def setup_ollama():
     except:
         print("❌ Ollama not found. Starting Autonomous Download...")
         url = "https://ollama.com/download/OllamaSetup.exe"
-        setup_file = os.path.join(os.environ.get("TEMP", "."), "OllamaSetup.exe")
+        setup_file = os.path.join(download_path, "OllamaSetup.exe")
         
         try:
+            print(f"📥 Downloading to: {setup_file}")
             response = requests.get(url, stream=True)
             with open(setup_file, "wb") as f:
                 for chunk in response.iter_content(chunk_size=8192):
@@ -68,11 +69,9 @@ def setup_ollama():
             print("📥 Download Complete. Installing Ollama (please wait)...")
             subprocess.run([setup_file, "/silent"], check=True)
             print("✅ Ollama installed successfully.")
-            # Give it a moment to start
             time.sleep(5)
         except Exception as e:
             print(f"❌ Failed to install Ollama: {e}")
-            print("Please install it manually from https://ollama.com")
             return False
     return True
 
@@ -89,7 +88,7 @@ def main():
     print(f"🚀 Installation Target: {install_path} ({psutil.disk_usage(best_drive).free // (1024**3)} GB Free)")
 
     # 3. Ollama Setup
-    if not setup_ollama():
+    if not setup_ollama(install_path):
         sys.exit(1)
 
     # 4. App & Environment Setup

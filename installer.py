@@ -256,7 +256,7 @@ def main():
     try {{
         $s = (New-Object -ComObject WScript.Shell).CreateShortcut("{shortcut_path}")
         $s.TargetPath = "{python_exe}"
-        $s.Arguments = "studio"
+        $s.Arguments = "-m vedai.cli studio"
         $s.WorkingDirectory = "{base_dir}"
         if (Test-Path "{logo_path}") {{ $s.IconLocation = "{logo_path}" }}
         $s.Save()
@@ -266,6 +266,10 @@ def main():
     }}
     """
     result = subprocess.run(["powershell", "-Command", ps_script], capture_output=True, text=True)
+    
+    # Auto-Launch Studio immediately
+    print("🚀 Auto-Launching VedAI Studio...")
+    subprocess.Popen([python_exe, "-m", "vedai.cli", "studio"], creationflags=subprocess.CREATE_NEW_CONSOLE)
     
     if "SUCCESS" in result.stdout:
         print("✅ Desktop Shortcut Created Successfully.")

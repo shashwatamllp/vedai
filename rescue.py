@@ -10,7 +10,7 @@ def nuclear_cleanup():
 
     # 1. Kill everything
     print("🎯 Killing all locked processes...")
-    processes = ["ollama.exe", "python.exe", "uvicorn.exe", "cmd.exe"]
+    processes = ["ollama.exe", "python.exe", "uvicorn.exe"]
     current_pid = os.getpid()
     for proc in psutil.process_iter(['pid', 'name']):
         try:

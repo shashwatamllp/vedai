@@ -48,26 +48,39 @@ def chat(
     # Check if model is pulled
     installed = client.get_installed_models()
     if selected_model not in installed and (selected_model + ":latest") not in installed:
-        console.print(f"[yellow]📥 Model '{selected_model}' not found. Initializing High-Speed Pull via CLI...[/yellow]")
+        console.print(f"[yellow]📥 Model '{selected_model}' not found. Initializing Resilient Pull...[/yellow]")
         try:
-            # Direct subprocess pull is more robust for large downloads on Windows
-            process = subprocess.Popen(
-                ["ollama", "pull", selected_model],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1
-            )
+            # Fallback list in case specific version fails
+            models_to_try = [selected_model, "qwen2.5-coder:latest", "phi3:mini"]
+            success = False
             
-            for line in process.stdout:
-                if "pulling" in line.lower() or "verifying" in line.lower():
-                    console.print(f"[dim]{line.strip()}[/dim]")
+            for m in models_to_try:
+                console.print(f"[dim]Trying to pull {m}...[/dim]")
+                process = subprocess.Popen(
+                    ["ollama", "pull", m],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1
+                )
+                
+                for line in process.stdout:
+                    # Clean ANSI noise for cleaner terminal output
+                    clean_line = line.replace("[?2026h", "").replace("[?25l", "").replace("[?25h", "").replace("[?2026l", "").strip()
+                    if clean_line and any(k in clean_line.lower() for k in ["pulling", "verifying", "downloading"]):
+                        console.print(f"[blue]Status:[/blue] {clean_line}")
+                
+                process.wait()
+                if process.returncode == 0:
+                    success = True
+                    selected_model = m # Update to the one that worked
+                    console.print(f"✅ Model {m} Pull Successful!")
+                    break
             
-            process.wait()
-            if process.returncode == 0:
-                console.print("✅ Model Pull Successful!")
-            else:
-                console.print("[red]Model pull failed. Please check your internet connection.[/red]")
+            if not success:
+                console.print("[red]All pull attempts failed. Manual action required.[/red]")
+                console.print(f"👉 Please run this in a NEW terminal: [bold]ollama pull {selected_model}[/bold]")
+                input("Press Enter once you have started the download manually...")
         except Exception as e:
             console.print(f"[red]Error during pull: {e}[/red]")
 

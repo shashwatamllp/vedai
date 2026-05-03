@@ -39,6 +39,14 @@ def chat(
     client = OllamaClient()
     ctx_mgr = ContextManager()
     
+    # [AUTONOMOUS PATH FIX] Ensure Ollama knows about our big storage drive
+    for part in psutil.disk_partitions():
+        potential_models = os.path.join(part.mountpoint, "VedAI_System", "Models")
+        if os.path.exists(potential_models):
+            os.environ["OLLAMA_MODELS"] = potential_models
+            console.print(f"[dim]Auto-detected model storage: {potential_models}[/dim]")
+            break
+
     selected_model = model or hw.get_recommended_model()
     VedUI.hardware_report(hw.specs, selected_model)
     
@@ -65,8 +73,8 @@ def chat(
                 )
                 
                 for line in process.stdout:
-                    # Clean ANSI noise for cleaner terminal output
-                    clean_line = line.replace("[?2026h", "").replace("[?25l", "").replace("[?25h", "").replace("[?2026l", "").strip()
+                    # Deep ANSI cleaning for cleaner terminal output
+                    clean_line = re.sub(r'(\x1b\[|\?|1G|\[K|\[?25l|\[?25h|\[?2026h|\[?2026l)', '', line).strip()
                     if clean_line and any(k in clean_line.lower() for k in ["pulling", "verifying", "downloading"]):
                         console.print(f"[blue]Status:[/blue] {clean_line}")
                 

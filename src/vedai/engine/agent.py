@@ -1,6 +1,6 @@
 import re
 import logging
-from typing import Generator
+from typing import AsyncGenerator, Generator
 from rich.console import Console
 from vedai.engine.ollama import OllamaClient
 from vedai.engine.tools import ToolEngine

@@ -207,18 +207,23 @@ def main():
     if HardwareEngine:
         hw = HardwareEngine()
         model = hw.get_recommended_model()
-        print(f"🤖 [STAGE 4] Hardware detected. Recommended Model: {model}")
-        
-        # IMPORTANT: Models go to the BIG DRIVE (J:)
+        # IMPORTANT: Models go to the BIG DRIVE
         model_storage = os.path.join(install_path, "Models")
         os.makedirs(model_storage, exist_ok=True)
         os.environ["OLLAMA_MODELS"] = model_storage
         
-        print(f"📥 Pulling {model} to {model_storage}...")
         # Note: We use 'setx' to make this environment variable persistent for Ollama
         subprocess.run(f'setx OLLAMA_MODELS "{model_storage}"', shell=True, capture_output=True)
-        
-        subprocess.Popen(["ollama", "pull", model], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    
+        # [STAGE 4] Proactive Model Pulling (Autonomous)
+        hw = HardwareEngine()
+        model = hw.get_recommended_model()
+        print(f"📦 [STAGE 4] Hardware detected: {hw.specs.get('ram_gb')}GB RAM. Auto-pulling {model}...")
+        try:
+            # Run pull in a way that shows progress but doesn't block completion of installer if it takes long
+            subprocess.run(["ollama", "pull", model], check=False)
+        except:
+            print("⚠️ Background pull initiated. It will continue in the background.")
 
     # 6. VS Code Integration
     if VSCodeManager:

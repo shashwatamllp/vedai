@@ -52,10 +52,27 @@ def get_best_drive():
 
 def setup_ollama(download_path):
     print("🔍 [STAGE 2] Checking for Ollama Engine...")
+    
+    # Check 1: System PATH
+    is_installed = False
     try:
         subprocess.run(["ollama", "--version"], capture_output=True, check=True)
-        print("✅ Ollama is already installed.")
+        is_installed = True
     except:
+        # Check 2: Direct path check
+        common_exe_paths = [
+            os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs", "Ollama", "ollama.exe"),
+            os.path.join(os.environ.get("ProgramFiles", ""), "Ollama", "ollama.exe")
+        ]
+        for exe_p in common_exe_paths:
+            if os.path.exists(exe_p):
+                is_installed = True
+                break
+    
+    if is_installed:
+        print("✅ Ollama is already installed.")
+        return True
+    else:
         print("❌ Ollama not found. Starting Autonomous Download...")
         url = "https://ollama.com/download/OllamaSetup.exe"
         # ALWAYS download to the local folder first to avoid drive-specific errors
@@ -102,13 +119,26 @@ def setup_ollama(download_path):
                 
                 # Wait for ollama.exe to appear in the system to confirm install
                 found = False
+                common_exe_paths = [
+                    os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs", "Ollama", "ollama.exe"),
+                    os.path.join(os.environ.get("ProgramFiles", ""), "Ollama", "ollama.exe")
+                ]
+                
                 for _ in range(120): # Wait up to 2 mins
                     time.sleep(5)
+                    # Check 1: System PATH
                     try:
                         subprocess.run(["ollama", "--version"], capture_output=True, check=True)
                         found = True
                         break
                     except: pass
+                    
+                    # Check 2: Direct path check
+                    for exe_p in common_exe_paths:
+                        if os.path.exists(exe_p):
+                            found = True
+                            break
+                    if found: break
                 
                 if not found:
                     print("❌ Installation seems to have timed out or failed.")

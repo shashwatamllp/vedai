@@ -183,18 +183,29 @@ def main():
     # 4. App & Environment Setup
     print("📦 [STAGE 3] Building Private Environment & Dependencies...")
     venv_path = os.path.join(install_path, "venv")
+    lib_path = os.path.join(install_path, "lib")
+    python_exe = sys.executable
+    use_venv = False
+
     try:
         # Use --copies for better reliability on different drives
         subprocess.run([sys.executable, "-m", "venv", "--copies", venv_path], check=True)
+        python_exe = os.path.join(venv_path, "Scripts", "python.exe")
+        pip_exe = os.path.join(venv_path, "Scripts", "pip.exe")
+        use_venv = True
     except Exception as e:
-        print(f"⚠️ Venv creation failed: {e}. Trying simple venv...")
-        subprocess.run([sys.executable, "-m", "venv", venv_path], check=True)
+        print(f"⚠️ Venv creation failed: {e}. Switching to Plan B (Direct Lib Install)...")
+        os.makedirs(lib_path, exist_ok=True)
+        pip_exe = f'"{sys.executable}" -m pip'
     
-    pip_exe = os.path.join(venv_path, "Scripts", "pip.exe")
-    python_exe = os.path.join(venv_path, "Scripts", "python.exe")
+    # Install dependencies
+    print("📥 Installing dependencies...")
+    if use_venv:
+        subprocess.run([pip_exe, "install", "--no-cache-dir", "-e", "."], check=True)
+    else:
+        # Plan B: Install directly to target lib folder
+        subprocess.run(f'{pip_exe} install --no-cache-dir --target="{lib_path}" -e .', shell=True, check=True)
     
-    # Install with no-cache to avoid disk issues
-    subprocess.run([pip_exe, "install", "--no-cache-dir", "-e", "."], check=True)
     print("✅ Environment Ready.")
 
     # 5. Model Selection & Pre-pull
@@ -221,10 +232,25 @@ def main():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     logo_path = os.path.join(base_dir, "logopic.png")
 
+    # If we are using Plan B, we need to set PYTHONPATH so python can find the libs on J:
+    env_args = ""
+    if not use_venv:
+        # PowerShell friendly way to set env var for the target process
+        # We'll use a batch wrapper or just set it in the shortcut arguments if possible
+        # Actually, let's just create a small .bat file for Plan B to be 100% safe
+        bat_path = os.path.join(install_path, "run_vedai.bat")
+        with open(bat_path, "w") as f:
+            f.write(f'@echo off\nset PYTHONPATH={lib_path}\n"{python_exe}" -m vedai.cli chat\npause')
+        target_exe = "cmd.exe"
+        arguments = f'/c "{bat_path}"'
+    else:
+        target_exe = python_exe
+        arguments = "-m vedai.cli chat"
+
     ps_script = f"""
     $s = (New-Object -ComObject WScript.Shell).CreateShortcut("{shortcut_path}")
-    $s.TargetPath = "{python_exe}"
-    $s.Arguments = "-m vedai.cli chat"
+    $s.TargetPath = "{target_exe}"
+    $s.Arguments = "{arguments}"
     $s.WorkingDirectory = "{base_dir}"
     $s.IconLocation = "{logo_path}"
     $s.Save()

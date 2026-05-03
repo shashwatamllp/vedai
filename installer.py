@@ -62,17 +62,31 @@ def setup_ollama(download_path):
         
         try:
             print(f"📥 Downloading to: {setup_file}")
-            response = requests.get(url, stream=True)
+            response = requests.get(url, stream=True, timeout=30)
+            response.raise_for_status() # Check if download actually worked
+            
             with open(setup_file, "wb") as f:
                 for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
+                    if chunk:
+                        f.write(chunk)
             
-            if not setup_file.exists():
-                raise FileNotFoundError("Download failed - file not found on disk.")
+            # Verify file exists and has size
+            if not setup_file.exists() or setup_file.stat().st_size < 1000000:
+                raise FileNotFoundError(f"Download failed or file too small: {setup_file}")
                 
-            print("📥 Download Complete. Installing Ollama (please wait)...")
-            # Using shell=True and quotes for robust Windows execution
-            subprocess.run(f'"{setup_file}" /silent', shell=True, check=True)
+            print(f"📥 Download Complete ({setup_file.stat().st_size // 1024**2} MB). Installing Ollama...")
+            
+            # Method 1: Try direct execution with subprocess
+            print("🚀 Launching installer...")
+            try:
+                subprocess.run([str(setup_file.absolute()), "/silent"], check=True, shell=False)
+            except Exception as e:
+                print(f"⚠️ Subprocess failed, trying Alternative Method: {e}")
+                # Method 2: Use os.startfile as fallback
+                os.startfile(str(setup_file.absolute()))
+                print("⏳ Waiting for installation to finish (approx 60s)...")
+                time.sleep(60)
+
             print("✅ Ollama installed successfully.")
             time.sleep(5)
         except Exception as e:

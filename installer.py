@@ -46,28 +46,22 @@ def perform_deep_cleanup():
     except: pass
 
 def get_best_drive():
+    # [USER OVERRIDE] Strictly use J: drive as requested
+    if os.path.exists("J:\\"):
+        return "J:\\"
+    
+    # Fallback only if J: is physically missing
+    print("⚠️ J: Drive not detected. Checking other drives...")
     best_drive = "C:\\"
     max_free = 0
     for part in psutil.disk_partitions():
         if 'fixed' in part.opts:
             try:
-                # [STABILITY CHECK] Test write in a subfolder to avoid root permission errors
-                test_dir = os.path.join(part.mountpoint, "VedAI_Temp_Test")
-                os.makedirs(test_dir, exist_ok=True)
-                test_file = os.path.join(test_dir, ".vedai_test")
-                with open(test_file, "w") as f:
-                    f.write("test")
-                os.remove(test_file)
-                shutil.rmtree(test_dir)
-                
                 usage = psutil.disk_usage(part.mountpoint)
                 if usage.free > max_free:
                     max_free = usage.free
                     best_drive = part.mountpoint
-            except: 
-                # Silent skip for root-protected drives unless it's C:
-                if part.mountpoint.lower() != "c:\\":
-                    print(f"⚠️ Drive {part.mountpoint} is unstable or read-only. Skipping.")
+            except: pass
     return best_drive
 
 def setup_ollama(download_path):

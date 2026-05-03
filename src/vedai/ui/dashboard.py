@@ -83,6 +83,22 @@ class VedUI:
         layout["footer"].update(Align.center(text, vertical="middle"))
 
     @staticmethod
+    def hardware_report(specs, model):
+        table = Table(title="[bold blue]System Diagnostic Report[/bold blue]", border_style="bright_blue")
+        table.add_column("Component", style="cyan")
+        table.add_column("Detail", style="magenta")
+        
+        table.add_row("Operating System", specs.os_name)
+        table.add_row("CPU Cores", f"{specs.cpu_cores}")
+        table.add_row("Total RAM", f"{specs.total_ram_gb} GB")
+        table.add_row("GPU Model", specs.gpu_name or "None (CPU Only)")
+        table.add_row("VRAM", f"{specs.vram_gb} GB")
+        table.add_row("Architecture", specs.architecture)
+        table.add_row("Recommended Model", f"[bold green]{model}[/bold green]")
+        
+        console.print(Align.center(table))
+
+    @staticmethod
     def banner():
         # Fallback for simple banner
         console.print(Panel.fit(

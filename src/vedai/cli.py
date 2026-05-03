@@ -138,28 +138,31 @@ def chat(
 def studio():
     """Launch the Premium VedAI Web Studio."""
     import webbrowser
-    from vedai.server import app
     import uvicorn
-
+    
     console.print("\n" + "="*50)
     console.print("🚀 [bold cyan]LAUNCHING VED-AI PREMIUM STUDIO[/bold cyan]")
-    console.print("📍 URL: [bold green]http://127.0.0.1:8000[/bold green]")
-    console.print("👉 [dim]If the browser doesn't open, copy the URL above into Chrome.[/dim]")
+    console.print("📍 URL: [bold green]http://127.0.0.1:8080[/bold green]")
     console.print("="*50 + "\n")
 
     try:
-        # Open browser slightly after server starts (simulated)
+        console.print("[dim]Loading AI Engine...[/dim]")
+        from vedai.server import app
+        
+        console.print("[dim]Starting Web Browser...[/dim]")
         def open_browser():
-            time.sleep(2)
-            webbrowser.open("http://127.0.0.1:8000")
+            time.sleep(3)
+            webbrowser.open("http://127.0.0.1:8080")
         
         import threading
         threading.Thread(target=open_browser, daemon=True).start()
         
-        # Run server in main thread to see ALL errors
-        uvicorn.run(app, host="127.0.0.1", port=8000)
+        console.print("[bold green]Server is Running![/bold green]")
+        uvicorn.run(app, host="127.0.0.1", port=8080, log_level="info")
     except Exception as e:
-        console.print(f"\n[bold red]STUDIO ERROR:[/bold red] {e}")
+        console.print(f"\n[bold red]STUDIO CRITICAL ERROR:[/bold red] {e}")
+        import traceback
+        traceback.print_exc()
         input("\nPress Enter to exit...")
 
 @app.command()

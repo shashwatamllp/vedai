@@ -268,9 +268,11 @@ def main():
     result = subprocess.run(["powershell", "-Command", ps_script], capture_output=True, text=True)
     
     # Auto-Launch Studio immediately
-    print("🚀 Auto-Launching VedAI Studio...")
+    print("🚀 Auto-Launching VedAI Studio on Port 8080...")
     try:
-        subprocess.Popen([python_exe, "-m", "vedai.cli", "studio"], creationflags=subprocess.CREATE_NEW_CONSOLE)
+        # Using cmd /k keeps the window open on error so the user can see it
+        launch_cmd = f'start cmd /k "{python_exe}" -m vedai.cli studio'
+        subprocess.run(launch_cmd, shell=True)
     except:
         print("⚠️ Auto-launch failed. Please use the desktop shortcut.")
     

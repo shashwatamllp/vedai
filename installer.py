@@ -82,13 +82,37 @@ def setup_ollama(download_path):
             
             print(f"\n📥 Download Complete. size: {os.path.getsize(setup_file) // 1024**2} MB")
             
-            # Step C: Execute
+            # Step C: Cleanup existing processes
+            print("🧹 Cleaning up any existing Ollama processes...")
+            os.system("taskkill /F /IM ollama.exe /T >nul 2>&1")
+            os.system("taskkill /F /IM \"Ollama Setup.exe\" /T >nul 2>&1")
+            time.sleep(2)
+
+            # Step D: Execute
             print("🚀 Launching Ollama installer...")
-            # Use os.system as the absolute most basic way to trigger an exe on Windows
+            # Try silent first
             exit_code = os.system(f'"{setup_file}" /silent')
+            
             if exit_code != 0:
-                print(f"⚠️ Installer exited with code {exit_code}, trying direct launch...")
-                subprocess.run([setup_file, "/silent"], check=True)
+                print(f"⚠️ Silent install returned {exit_code}. Launching Interactive Mode...")
+                print("👉 Please click 'Install' in the window that appears.")
+                # Fallback to interactive mode (no /silent flag)
+                os.startfile(str(setup_file))
+                print("⏳ Waiting for you to finish the installation...")
+                
+                # Wait for ollama.exe to appear in the system to confirm install
+                found = False
+                for _ in range(120): # Wait up to 2 mins
+                    time.sleep(5)
+                    try:
+                        subprocess.run(["ollama", "--version"], capture_output=True, check=True)
+                        found = True
+                        break
+                    except: pass
+                
+                if not found:
+                    print("❌ Installation seems to have timed out or failed.")
+                    return False
             
             print("✅ Ollama installed successfully.")
             time.sleep(5)

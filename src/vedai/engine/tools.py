@@ -87,14 +87,21 @@ class ToolEngine:
         """Returns the prompt-friendly definitions of available tools."""
         return """
 Available Tools:
-1. `list_files(path)`: List directory contents.
-2. `read_file(path)`: Read file content.
-3. `write_file(path, content)`: Write/Over-write file content.
-4. `execute_shell(command)`: Run a terminal command.
+1. `list_files(path: str)`: List directory contents.
+2. `read_file(file_path: str)`: Read file content.
+3. `write_file(file_path: str, content: str)`: Write/Over-write file content.
+4. `execute_shell(command: str)`: Run a terminal command.
 5. `get_project_tree()`: Get entire project structure.
-6. `search_code(query)`: Search for text across codebase.
+6. `search_code(query: str)`: Search for text across codebase.
 
-To use a tool, respond in this format:
-THOUGHT: [Reasoning]
-TOOL: tool_name(arguments)
+To use a tool, you MUST respond with a JSON block. Use this exact format:
+```json
+{
+  "tool": "tool_name",
+  "args": {
+    "arg_name": "arg_value"
+  }
+}
+```
+If you do not need to use a tool, just provide your final answer normally.
 """

@@ -31,20 +31,20 @@ class AgentLoop:
         max_steps = 10
         current_step = 0
         
-        while current_step < max_steps:
+            while current_step < max_steps:
             current_step += 1
             full_response = ""
             
             try:
                 if is_claude:
                     import anthropic
+                    import os
                     client = anthropic.AsyncAnthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
-                    # Note: Claude expects a slightly different format, but we'll adapt for simplicity
                     async with client.messages.stream(
                         model=self.model,
                         max_tokens=4096,
                         system=history[0]["content"],
-                        messages=[{"role": "user", "content": user_query}]
+                        messages=history[1:]
                     ) as stream:
                         async for text in stream.text_stream:
                             full_response += text
@@ -60,56 +60,70 @@ class AgentLoop:
                 yield f"\n[bold red]Error communicating with Provider:[/bold red] {str(e)}"
                 break
 
-            # Parse tool calls: TOOL: tool_name(args)
-            tool_match = re.search(r"TOOL:\s*(\w+)\((.*)\)", full_response)
+            # Parse JSON tool calls
+            import json
+            import re
             
-            if tool_match:
-                tool_name = tool_match.group(1)
-                args_str = tool_match.group(2)
-                
-                console.print(f"\n[bold yellow]Agent Action:[/bold yellow] {tool_name}({args_str})")
-                
-                # Execute tool
-                tool_output = self._execute_tool(tool_name, args_str)
-                console.print(f"[dim]Tool Output received ({len(tool_output)} chars)[/dim]")
-                
-                # Add to history and continue loop
-                history.append({"role": "assistant", "content": full_response})
-                history.append({"role": "user", "content": f"TOOL OUTPUT: {tool_output}"})
-                yield f"\n\n--- Step {current_step} complete. Analyzing output... ---\n\n"
+            tool_called = False
+            # Look for ```json ... ``` blocks
+            json_blocks = re.findall(r"```json\s*(.*?)\s*```", full_response, re.DOTALL)
+            for block in json_blocks:
+                try:
+                    tool_data = json.loads(block)
+                    if "tool" in tool_data and "args" in tool_data:
+                        tool_name = tool_data["tool"]
+                        args_dict = tool_data["args"]
+                        
+                        yield f"\n\n[dim]🔧 VedAI is executing: {tool_name}...[/dim]\n"
+                        
+                        tool_output = self._execute_tool(tool_name, args_dict)
+                        
+                        # Add tool outputs to history to feed back to the LLM
+                        history.append({"role": "assistant", "content": full_response})
+                        
+                        if tool_output.startswith("ERROR:"):
+                            yield f"[dim red]Tool Error: {tool_output}[/dim red]\n"
+                            history.append({"role": "user", "content": f"TOOL_ERROR: {tool_output}\nPlease self-correct and try again."})
+                        else:
+                            history.append({"role": "user", "content": f"TOOL_OUTPUT:\n{tool_output}"})
+                        
+                        tool_called = True
+                        break # Only process one tool per step
+                except json.JSONDecodeError:
+                    continue
+            
+            if tool_called:
+                yield f"\n[dim]🔄 Analyzing results (Step {current_step}/{max_steps})...[/dim]\n\n"
             else:
-                # No tool call found, assume final answer
+                # No valid tool call found, assume the model has provided the final answer.
                 break
 
     def _build_prompt(self, history: list) -> str:
-        # Convert history list to a flat string prompt for the model
         flat = ""
         for msg in history:
             flat += f"{msg['role'].upper()}: {msg['content']}\n"
         flat += "ASSISTANT: "
         return flat
 
-    def _execute_tool(self, name: str, args_str: str) -> str:
+    def _execute_tool(self, name: str, args: dict) -> str:
         try:
-            # Very basic argument parsing (supporting strings and simple args)
-            # In a real enterprise app, we'd use a proper parser or JSON
             if name == "list_files":
-                return self.tools.list_files(args_str.strip("'\" "))
+                return self.tools.list_files(args.get("path", "."))
             elif name == "read_file":
-                return self.tools.read_file(args_str.strip("'\" "))
+                return self.tools.read_file(args.get("file_path", ""))
             elif name == "write_file":
-                # Splitting file and content might be tricky with regex
-                parts = args_str.split(",", 1)
-                if len(parts) == 2:
-                    return self.tools.write_file(parts[0].strip("'\" "), parts[1].strip("'\" "))
-                return "Error: write_file requires path and content."
+                return self.tools.write_file(args.get("file_path", ""), args.get("content", ""))
             elif name == "execute_shell":
-                return self.tools.execute_shell(args_str.strip("'\" "))
+                res = self.tools.execute_shell(args.get("command", ""))
+                # Self-correction: check if shell command failed
+                if "Exit Code:" in res and not "Exit Code: 0" in res:
+                    return f"ERROR: Command failed.\n{res}"
+                return res
             elif name == "get_project_tree":
                 return self.tools.get_project_tree()
             elif name == "search_code":
-                return self.tools.search_code(args_str.strip("'\" "))
+                return self.tools.search_code(args.get("query", ""))
             else:
-                return f"Error: Tool {name} not found."
+                return f"ERROR: Tool {name} not found."
         except Exception as e:
-            return f"Error executing {name}: {str(e)}"
+            return f"ERROR: Exception executing {name}: {str(e)}"

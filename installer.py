@@ -177,6 +177,12 @@ def main():
     install_path = os.path.join(best_drive, "VedAI_System")
     os.makedirs(install_path, exist_ok=True)
     
+    # Pre-set Ollama Models path so the Ollama service starts with the correct drive
+    model_storage = os.path.join(install_path, "Models")
+    os.makedirs(model_storage, exist_ok=True)
+    os.environ["OLLAMA_MODELS"] = model_storage
+    subprocess.run(f'setx OLLAMA_MODELS "{model_storage}"', shell=True, capture_output=True)
+    
     # 1. Cleanup
     perform_deep_cleanup()
     
@@ -227,17 +233,8 @@ def main():
     if HardwareEngine:
         hw = HardwareEngine()
         model = hw.get_recommended_model()
-        # IMPORTANT: Models go to the BIG DRIVE
-        model_storage = os.path.join(install_path, "Models")
-        os.makedirs(model_storage, exist_ok=True)
-        os.environ["OLLAMA_MODELS"] = model_storage
-        
-        # Note: We use 'setx' to make this environment variable persistent for Ollama
-        subprocess.run(f'setx OLLAMA_MODELS "{model_storage}"', shell=True, capture_output=True)
     
         # [STAGE 4] Proactive Model Pulling (Autonomous)
-        hw = HardwareEngine()
-        model = hw.get_recommended_model()
         print(f"📦 [STAGE 4] Hardware detected: {hw.specs.total_ram_gb}GB RAM. Auto-pulling {model}...")
         
         pull_result = subprocess.run(["ollama", "pull", model], capture_output=True, text=True)

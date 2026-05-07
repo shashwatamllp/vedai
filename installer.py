@@ -36,14 +36,8 @@ def perform_deep_cleanup():
                         shutil.rmtree(path, ignore_errors=True)
                     except: pass
     print("✅ System is now a Clean Slate.")
-    # Force kill only OTHER lingering python processes to avoid lock errors
-    try:
-        current_pid = os.getpid()
-        for proc in psutil.process_iter(['pid', 'name']):
-            if proc.info['name'] == 'python.exe' and proc.info['pid'] != current_pid:
-                proc.kill()
-        time.sleep(1)
-    except: pass
+    # Safe cleanup of ollama processes only, leave python.exe alone to prevent IDE crashes
+    os.system("taskkill /F /IM ollama.exe /T >nul 2>&1")
 
 def get_best_drive():
     # [USER OVERRIDE] Strictly use J: drive as requested
@@ -263,7 +257,8 @@ def main():
     if VSCodeManager:
         print("🔌 [STAGE 5] Integrating with VS Code...")
         vsc = VSCodeManager()
-        print(vsc.configure_continue())
+        fallback_model = model if 'model' in locals() else hw.get_recommended_model() if 'hw' in locals() else "qwen2.5-coder:7b"
+        print(vsc.setup_all(fallback_model))
 
     # 7. Desktop Shortcut
     print("🎨 [STAGE 6] Creating Premium Desktop Shortcut...")
@@ -329,9 +324,12 @@ def main():
     print("\n" + "="*60)
     print("✨ SUCCESS: VedAI is now fully operational!")
     print(f"📍 System: {env_path} (Lightweight)")
-    print(f"📍 Models: {install_path} (160GB Space Protected)")
-    print("👉 Click 'VedAI Prime' on your Desktop to start coding.")
+    print(f"📍 Models: {install_path} (Space Protected)")
+    print("👉 Opening VS Code with Agentic Environment...")
     print("="*60 + "\n")
+    
+    # Auto-launch VS Code in current directory
+    os.system("code .")
 
 if __name__ == "__main__":
     main()

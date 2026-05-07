@@ -24,8 +24,31 @@ def print_banner():
 
 def perform_deep_cleanup():
     print("🧹 [STAGE 1] Performing Deep System Cleanup...")
-    targets = ["vedai", "vedai_apps", "VedAI_System", "vedai_venv"]
-    for part in psutil.disk_partitions():
+    
+    # 1. Safely kill any old VedAI Server processes in RAM first!
+    # (Without killing other unrelated python applications like VS Code)
+    killed_count = 0
+    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+        try:
+            cmdline = proc.info.get('cmdline') or []
+            # Check if this process is running vedai.cli
+            if proc.info['name'] in ['python.exe', 'pythonw.exe'] and any('vedai.cli' in cmd for cmd in cmdline):
+                proc.kill()
+                killed_count += 1
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+            
+    if killed_count > 0:
+        print(f"🛑 Terminated {killed_count} background VedAI server(s).")
+        import time
+        time.sleep(1) # Give OS time to release ports
+        
+    # Safe cleanup of ollama processes
+    os.system("taskkill /F /IM ollama.exe /T >nul 2>&1")
+
+    # 2. Now clean up the files from the disk
+    targets = ["vedai", "vedai_apps", "VedAI_System", "vedai_venv", "VedAI_Bridge"]
+    for part in psutil.disk_partitions(all=False):
         if 'fixed' in part.opts:
             drive = part.mountpoint
             for target in targets:
@@ -35,9 +58,18 @@ def perform_deep_cleanup():
                         print(f"🗑️ Removing old installation: {path}")
                         shutil.rmtree(path, ignore_errors=True)
                     except: pass
+                    
+    # Also clean LOCALAPPDATA just in case there are leftovers
+    local_appdata = os.environ.get("LOCALAPPDATA", "C:\\")
+    for target in targets:
+        path = os.path.join(local_appdata, target)
+        if os.path.exists(path):
+            try:
+                print(f"🗑️ Removing leftover app data: {path}")
+                shutil.rmtree(path, ignore_errors=True)
+            except: pass
+            
     print("✅ System is now a Clean Slate.")
-    # Safe cleanup of ollama processes only, leave python.exe alone to prevent IDE crashes
-    os.system("taskkill /F /IM ollama.exe /T >nul 2>&1")
 
 def get_best_drive():
     best_drive = "C:\\"

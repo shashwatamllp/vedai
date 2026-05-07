@@ -3,86 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VedAI Web Studio | Premium AI Coding</title>
+    <title>VedAI Web Studio | Autonomous Local AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
-        .glass { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .glow { box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); }
-        .code-font { font-family: 'JetBrains Mono', monospace; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .glass { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
+        .glow { box-shadow: 0 0 20px rgba(59,130,246,0.2); }
+        .code-font { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        .typing::after { content: '▋'; animation: blink 1s step-end infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+        pre { white-space: pre-wrap; word-break: break-word; }
     </style>
 </head>
-<body class="bg-[#0b0f19] text-gray-200 h-screen flex flex-col overflow-hidden">
+<body class="bg-[#080c14] text-gray-200 h-screen flex flex-col overflow-hidden">
 
     <!-- Header -->
-    <header class="h-16 glass border-b flex items-center justify-between px-6 z-50">
+    <header class="h-14 glass border-b border-white/5 flex items-center justify-between px-6 z-50 shrink-0">
         <div class="flex items-center space-x-3">
-            <div class="w-8 h-8 bg-blue-600 rounded-lg glow flex items-center justify-center font-bold text-white">V</div>
-            <h1 class="text-xl font-semibold tracking-tight text-white">VedAI <span class="text-blue-500 text-sm font-light">Web Studio</span></h1>
+            <div class="w-7 h-7 bg-gradient-to-br from-blue-500 to-violet-600 rounded-lg flex items-center justify-center font-bold text-white text-sm glow">V</div>
+            <h1 class="text-lg font-semibold tracking-tight text-white">VedAI <span class="text-blue-400 text-xs font-light">Studio</span></h1>
         </div>
         <div class="flex items-center space-x-4">
             <select id="model-select" class="bg-gray-900/80 border border-white/10 text-white text-xs rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-blue-500 transition-all cursor-pointer">
-                <option value="qwen2.5-coder:1.5b">Loading Models...</option>
+                <option>Loading models...</option>
             </select>
             <div id="hw-status" class="flex items-center space-x-3 text-xs bg-gray-900/50 px-3 py-1.5 rounded-full border border-white/5">
-                <span class="flex h-2 w-2 rounded-full bg-green-500"></span>
-                <span id="cpu-load">CPU: 4 Cores</span>
+                <span class="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+                <span id="cpu-load">CPU: --</span>
                 <span class="text-gray-600">|</span>
-                <span id="ram-load">RAM: 15.82GB</span>
+                <span id="ram-load">RAM: --</span>
             </div>
-            <button class="bg-blue-600/10 text-blue-400 border border-blue-500/20 px-4 py-1.5 rounded-md text-sm hover:bg-blue-600 hover:text-white transition-all">
-                Publish Project
-            </button>
+            <div id="agent-status" class="text-xs px-3 py-1 rounded-full bg-gray-800 border border-white/5 text-gray-400">Idle</div>
         </div>
     </header>
 
     <!-- Main Content -->
     <main class="flex-1 flex overflow-hidden">
-        
-        <!-- Left Pane: Chat -->
-        <section class="w-1/2 flex flex-col border-r border-white/5 bg-[#0b0f19]">
-            <div id="chat-messages" class="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
+
+        <!-- Left: Chat -->
+        <section class="w-1/2 flex flex-col border-r border-white/5">
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-5 space-y-5">
                 <div class="flex flex-col space-y-2">
-                    <div class="text-xs text-blue-500 font-semibold uppercase tracking-widest">VedAI System</div>
-                    <div class="bg-blue-600/5 border border-blue-500/10 p-4 rounded-xl max-w-[90%]">
-                        Welcome to the Premium Web Studio. I am ready to build with you. What are we creating today?
+                    <div class="text-xs text-blue-400 font-semibold uppercase tracking-widest">VedAI</div>
+                    <div class="bg-blue-600/5 border border-blue-500/10 p-4 rounded-xl text-sm max-w-[92%]">
+                        Welcome to VedAI Studio. I can write code, run it, and fix errors — all locally on your machine. What are we building today?
                     </div>
                 </div>
             </div>
 
-            <!-- Input Area -->
-            <div class="p-6 border-t border-white/5 glass">
+            <div class="p-4 border-t border-white/5 glass shrink-0">
                 <div class="relative">
-                    <textarea id="user-input" rows="3" class="w-full bg-gray-900/50 border border-white/10 rounded-xl p-4 pr-16 focus:outline-none focus:border-blue-500 transition-all resize-none text-sm" placeholder="Ask VedAI to build something..."></textarea>
+                    <textarea id="user-input" rows="3"
+                        class="w-full bg-gray-900/60 border border-white/10 rounded-xl p-4 pr-14 focus:outline-none focus:border-blue-500 transition-all resize-none text-sm code-font"
+                        placeholder="Ask VedAI to build something... (Shift+Enter for newline)"></textarea>
                     <button id="send-btn" class="absolute right-3 bottom-3 bg-blue-600 p-2 rounded-lg hover:bg-blue-500 transition-all glow">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                     </button>
                 </div>
             </div>
         </section>
 
-        <!-- Right Pane: Artifacts / Preview -->
-        <section class="w-1/2 bg-[#0d121d] flex flex-col">
-            <div class="h-12 border-b border-white/5 flex items-center px-4 justify-between bg-gray-900/30">
-                <div class="flex space-x-4 text-xs font-medium">
-                    <button class="text-blue-400 border-b-2 border-blue-500 pb-2 px-1">PREVIEW</button>
-                    <button class="text-gray-500 hover:text-gray-300 pb-2 px-1">CODE</button>
-                    <button class="text-gray-500 hover:text-gray-300 pb-2 px-1">STRUCTURE</button>
-                </div>
-                <div class="flex space-x-2">
-                    <div class="w-2.5 h-2.5 rounded-full bg-red-500/20 border border-red-500/40"></div>
-                    <div class="w-2.5 h-2.5 rounded-full bg-yellow-500/20 border border-yellow-500/40"></div>
-                    <div class="w-2.5 h-2.5 rounded-full bg-green-500/20 border border-green-500/40"></div>
-                </div>
+        <!-- Right: Live Steps + Preview -->
+        <section class="w-1/2 flex flex-col bg-[#070b12]">
+            <!-- Tabs -->
+            <div class="h-10 border-b border-white/5 flex items-center px-4 space-x-4 shrink-0 bg-gray-900/30">
+                <button onclick="switchTab('steps')" id="tab-steps" class="text-xs font-medium text-blue-400 border-b-2 border-blue-500 pb-2 px-1">LIVE STEPS</button>
+                <button onclick="switchTab('preview')" id="tab-preview" class="text-xs font-medium text-gray-500 hover:text-gray-300 pb-2 px-1">PREVIEW</button>
+                <button onclick="switchTab('terminal')" id="tab-terminal" class="text-xs font-medium text-gray-500 hover:text-gray-300 pb-2 px-1">TERMINAL</button>
             </div>
-            <div id="preview-container" class="flex-1 bg-white rounded-m m-4 shadow-2xl overflow-hidden relative">
-                <!-- Live Preview Frame -->
-                <div class="absolute inset-0 flex items-center justify-center text-gray-400 font-light italic">
-                    Waiting for output...
-                </div>
-                <iframe id="preview-frame" class="w-full h-full border-none hidden"></iframe>
+
+            <!-- Steps Panel -->
+            <div id="panel-steps" class="flex-1 overflow-y-auto p-4 code-font text-gray-300 space-y-1">
+                <div class="text-gray-600 italic text-xs">Waiting for a task...</div>
+            </div>
+
+            <!-- Preview Panel -->
+            <div id="panel-preview" class="flex-1 bg-white hidden">
+                <iframe id="preview-frame" class="w-full h-full border-none"></iframe>
+            </div>
+
+            <!-- Terminal Panel -->
+            <div id="panel-terminal" class="flex-1 overflow-y-auto p-4 bg-black/60 code-font text-green-400 text-xs hidden">
+                <div class="text-gray-600">$ awaiting commands...</div>
             </div>
         </section>
 
@@ -92,33 +96,71 @@
         const chatMessages = document.getElementById('chat-messages');
         const userInput = document.getElementById('user-input');
         const sendBtn = document.getElementById('send-btn');
-        const previewFrame = document.getElementById('preview-frame');
-        const previewContainer = document.getElementById('preview-container');
+        const stepsPanel = document.getElementById('panel-steps');
+        const terminalPanel = document.getElementById('panel-terminal');
+        const agentStatus = document.getElementById('agent-status');
+        let isRunning = false;
+
+        function switchTab(tab) {
+            ['steps','preview','terminal'].forEach(t => {
+                document.getElementById(`panel-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('text-blue-400','border-b-2','border-blue-500');
+                document.getElementById(`tab-${t}`).classList.add('text-gray-500');
+            });
+            document.getElementById(`panel-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('text-blue-400','border-b-2','border-blue-500');
+            document.getElementById(`tab-${tab}`).classList.remove('text-gray-500');
+        }
+
+        function appendMessage(role, text) {
+            const wrap = document.createElement('div');
+            wrap.className = 'flex flex-col space-y-2';
+            const label = role === 'user'
+                ? '<div class="text-xs text-gray-500 font-semibold uppercase tracking-widest text-right">You</div>'
+                : '<div class="text-xs text-blue-400 font-semibold uppercase tracking-widest">VedAI</div>';
+            const bubble = role === 'user'
+                ? `<div class="bg-white/5 border border-white/10 p-4 rounded-xl max-w-[90%] self-end text-sm ml-auto">${text}</div>`
+                : `<div id="current-response" class="bg-blue-600/5 border border-blue-500/10 p-4 rounded-xl max-w-[92%] text-sm whitespace-pre-wrap"></div>`;
+            wrap.innerHTML = label + bubble;
+            chatMessages.appendChild(wrap);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return wrap.querySelector('#current-response');
+        }
+
+        function appendStep(text) {
+            const line = document.createElement('div');
+            line.className = 'text-xs leading-relaxed';
+            line.textContent = text;
+            // Color coding
+            if (text.includes('✅')) line.classList.add('text-green-400');
+            else if (text.includes('❌')) line.classList.add('text-red-400');
+            else if (text.includes('⚠️')) line.classList.add('text-yellow-400');
+            else if (text.includes('🧠') || text.includes('📋') || text.includes('⚙️') || text.includes('🔄')) line.classList.add('text-blue-300');
+            else line.classList.add('text-gray-300');
+            stepsPanel.appendChild(line);
+            stepsPanel.scrollTop = stepsPanel.scrollHeight;
+        }
 
         async function sendMessage() {
+            if (isRunning) return;
             const text = userInput.value.trim();
-            if(!text) return;
+            if (!text) return;
+            isRunning = true;
+            sendBtn.disabled = true;
 
-            // Add user message to UI
-            const userDiv = document.createElement('div');
-            userDiv.className = 'flex flex-col items-end space-y-2';
-            userDiv.innerHTML = `<div class="text-xs text-gray-500 font-semibold uppercase tracking-widest">User</div>
-                                <div class="bg-white/5 border border-white/10 p-4 rounded-xl max-w-[90%] text-white text-sm">${text}</div>`;
-            chatMessages.appendChild(userDiv);
+            appendMessage('user', text);
             userInput.value = '';
-            chatMessages.scrollTop = chatMessages.scrollHeight;
 
-            // Add AI Placeholder
-            const aiDiv = document.createElement('div');
-            aiDiv.className = 'flex flex-col space-y-2';
-            aiDiv.innerHTML = `<div class="text-xs text-blue-500 font-semibold uppercase tracking-widest">VedAI Studio</div>
-                               <div id="current-response" class="bg-blue-600/5 border border-blue-500/10 p-4 rounded-xl max-w-[90%] text-sm min-h-[50px]"></div>`;
-            chatMessages.appendChild(aiDiv);
-            const responseContainer = aiDiv.querySelector('#current-response');
+            const responseEl = appendMessage('assistant', '');
+            stepsPanel.innerHTML = '';
+            switchTab('steps');
 
-            // Call Backend (FastAPI)
+            agentStatus.textContent = 'Running...';
+            agentStatus.className = 'text-xs px-3 py-1 rounded-full bg-blue-900/50 border border-blue-500/30 text-blue-300';
+
+            const selectedModel = document.getElementById('model-select').value;
+
             try {
-                const selectedModel = document.getElementById('model-select').value;
                 const response = await fetch('/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -127,66 +169,84 @@
 
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
-                let fullText = "";
+                let chatText = '';
 
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
-                    
+
                     const chunk = decoder.decode(value);
                     const lines = chunk.split('\n');
                     for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            const data = line.slice(6);
-                            if (data === '[DONE]') break;
+                        if (!line.startsWith('data: ')) continue;
+                        const data = line.slice(6).trim();
+                        if (data === '[DONE]') break;
+                        try {
                             const payload = JSON.parse(data);
-                            fullText += payload.text;
-                            responseContainer.innerText = fullText;
-                            
-                            // Simple logic to detect HTML/Code and show in preview
-                            if (fullText.includes('<!DOCTYPE html>') || fullText.includes('<html')) {
-                                previewFrame.classList.remove('hidden');
-                                previewContainer.querySelector('.italic').classList.add('hidden');
-                                previewFrame.srcdoc = fullText.match(/<html[\s\S]*<\/html>/i)?.[0] || fullText;
+                            const t = payload.text || '';
+
+                            // Everything goes to chat
+                            chatText += t;
+                            if (responseEl) responseEl.textContent = chatText;
+
+                            // Step indicators go to steps panel too
+                            if (t.trim()) {
+                                t.split('\n').forEach(l => { if (l.trim()) appendStep(l); });
                             }
-                        }
+
+                            // Detect terminal output → terminal panel
+                            if (t.includes('```') || t.includes('OUTPUT:')) {
+                                terminalPanel.innerHTML += `<div>${t}</div>`;
+                            }
+
+                            // Detect HTML preview
+                            if (chatText.includes('<!DOCTYPE html') || chatText.includes('<html')) {
+                                const match = chatText.match(/<html[\s\S]*<\/html>/i);
+                                if (match) {
+                                    document.getElementById('preview-frame').srcdoc = match[0];
+                                }
+                            }
+
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        } catch {}
                     }
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
                 }
             } catch (e) {
-                responseContainer.innerText = "Error: Make sure VedAI Server is running.";
-                responseContainer.classList.add('text-red-400');
+                if (responseEl) {
+                    responseEl.textContent = '❌ Connection error. Make sure the server is running.';
+                    responseEl.classList.add('text-red-400');
+                }
             }
+
+            agentStatus.textContent = 'Idle';
+            agentStatus.className = 'text-xs px-3 py-1 rounded-full bg-gray-800 border border-white/5 text-gray-400';
+            isRunning = false;
+            sendBtn.disabled = false;
         }
 
-        // Fetch Hardware Status & Models on Load
-        async function updateStatus() {
+        // Load hardware status and models
+        async function loadStatus() {
             try {
                 const res = await fetch('/status');
                 const data = await res.json();
-                document.getElementById('cpu-load').innerText = `CPU: ${data.hardware.cpu_cores} Cores`;
-                document.getElementById('ram-load').innerText = `RAM: ${data.hardware.ram_gb}GB`;
-                
-                // Populate Models
-                const modelSelect = document.getElementById('model-select');
-                modelSelect.innerHTML = "";
-                data.installed_models.forEach(model => {
+                document.getElementById('cpu-load').textContent = `CPU: ${data.hardware.cpu_cores} Cores`;
+                document.getElementById('ram-load').textContent = `RAM: ${data.hardware.ram_gb} GB`;
+
+                const sel = document.getElementById('model-select');
+                sel.innerHTML = '';
+                (data.installed_models || []).forEach(m => {
                     const opt = document.createElement('option');
-                    opt.value = model;
-                    opt.innerText = model;
-                    if(model === data.recommended_model) opt.selected = true;
-                    modelSelect.appendChild(opt);
+                    opt.value = m; opt.textContent = m;
+                    if (m === data.recommended_model) opt.selected = true;
+                    sel.appendChild(opt);
                 });
-            } catch (e) {}
+            } catch {}
         }
-        updateStatus();
+        loadStatus();
 
         sendBtn.addEventListener('click', sendMessage);
-        userInput.addEventListener('keydown', (e) => {
-            if(e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
+        userInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
         });
     </script>
 </body>

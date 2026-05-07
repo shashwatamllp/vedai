@@ -25,7 +25,8 @@ class RuntimeAgent:
     def __init__(self, workspace: str = "."):
         self.memory = ContextMemory()
         self.project_memory = ProjectMemory(workspace=workspace)
-        self.project_memory.initialize()  # Creates VedAI.md if not present
+        self.project_memory.initialize()   # Create VedAI.md if missing
+        self.project_memory.refresh_map()  # Create/update VedAI-map.md
         self.planner = Planner()
         self.executor = Executor()
         self.verifier = Verifier()
@@ -33,10 +34,10 @@ class RuntimeAgent:
 
     async def run(self, task: str):
         state = AgentState(task=task)
-        
-        # Build context from both short-term (conversation) and long-term (VedAI.md) memory
+
+        # ── Read both VedAI.md AND VedAI-map.md before every task ──
+        long_term = self.project_memory.build_agent_context()
         short_term = self.memory.build_context()
-        long_term = self.project_memory.get_context_summary()
         context = f"{long_term}\n\nRecent conversation:\n{short_term}"
 
         # --- Step 1: Plan ---

@@ -70,17 +70,27 @@ async def connect_project(payload: WorkspacePayload):
         return {"success": False, "error": f"Path is not a directory: {payload.path}"}
 
     _current_workspace = str(path.resolve())
-    runtime = RuntimeAgent(workspace=_current_workspace)  # Reinitialize with new workspace
+    runtime = RuntimeAgent(workspace=_current_workspace)  # Reinitialize — this creates VedAI.md + VedAI-map.md
 
-    # Read VedAI.md summary
-    memory_summary = runtime.project_memory.get_context_summary()
+    memory_summary = runtime.project_memory.build_agent_context()
     vedai_md_path = str(path / "VedAI.md")
+    vedai_map_path = str(path / "VedAI-map.md")
 
     return {
         "success": True,
         "workspace": _current_workspace,
         "vedai_md": vedai_md_path,
+        "vedai_map": vedai_map_path,
         "memory_summary": memory_summary
+    }
+
+
+@app.get("/workspace/memory")
+async def get_memory():
+    """Return contents of VedAI.md and VedAI-map.md for the UI Memory tab."""
+    return {
+        "vedai_md": runtime.project_memory.read(),
+        "vedai_map": runtime.project_memory.read_map()
     }
 
 

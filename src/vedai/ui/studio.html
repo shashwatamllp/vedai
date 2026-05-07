@@ -292,10 +292,17 @@ async function loadMemory() {
     const el = document.getElementById('memory-content');
     if (!currentWorkspace) { el.textContent = 'Connect a project to see its memory...'; return; }
     try {
-        const res = await fetch(`/workspace/tree`);
-        // Read VedAI.md via file tree (we'll add a direct endpoint)
-        el.textContent = 'VedAI.md is being updated by the agent after each task.';
-    } catch {}
+        const res = await fetch('/workspace/memory');
+        const data = await res.json();
+        
+        // Show both files with separators
+        const vedaiMd = data.vedai_md || '(empty)';
+        const vedaiMap = data.vedai_map || '(empty)';
+        
+        el.textContent = `═══ VedAI.md (Session Memory) ═══\n\n${vedaiMd}\n\n═══ VedAI-map.md (Project Architecture) ═══\n\n${vedaiMap}`;
+    } catch {
+        el.textContent = 'Could not load memory files.';
+    }
 }
 
 // ─── CHAT ───

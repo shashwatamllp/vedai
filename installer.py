@@ -42,20 +42,24 @@ def perform_deep_cleanup():
 def get_best_drive():
     best_drive = "C:\\"
     max_free = 0
-    for part in psutil.disk_partitions():
-        if 'fixed' in part.opts or 'removable' in part.opts:
+    for part in psutil.disk_partitions(all=False):
+        if 'fixed' in part.opts: # Ignore removable/ghost drives
             try:
-                # Test if the drive is actually accessible
+                # 1. Check disk usage
                 usage = psutil.disk_usage(part.mountpoint)
-                # Ensure we can actually write to it by checking if it has free space
                 if usage.free > max_free:
-                    max_free = usage.free
-                    best_drive = part.mountpoint
+                    # 2. Hard check: Try to write to it to avoid WinError 433 on ghost drives
+                    test_path = os.path.join(part.mountpoint, ".vedai_test_write")
+                    try:
+                        os.makedirs(test_path, exist_ok=True)
+                        os.rmdir(test_path)
+                        max_free = usage.free
+                        best_drive = part.mountpoint
+                    except OSError:
+                        pass # Drive is not actually writable
             except Exception:
                 pass
                 
-    # If the user specifically wanted J: and it's accessible, we can use it, 
-    # but the dynamic check above is safer and will find the biggest drive anyway.
     return best_drive
 
 def setup_ollama(download_path):

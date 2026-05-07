@@ -60,7 +60,7 @@ async def chat(payload: ChatPayload):
         
         # Send the final plan and result
         plan = result.get("plan", "")
-        yield f"data: {json.dumps({'text': f'\\n**Plan:**\\n{plan}\\n'})}\n\n"
+        yield f"data: {json.dumps({'text': f'\n**Plan:**\n{plan}\n'})}\n\n"
         
         yield "data: [DONE]\n\n"
 

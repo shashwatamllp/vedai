@@ -10,7 +10,7 @@ class OllamaClient:
         )
 
         self.model = (
-            "qwen2.5-coder:1.5b"
+            "qwen2.5-coder:7b"
         )
 
     async def generate(

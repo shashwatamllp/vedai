@@ -155,8 +155,6 @@ def studio():
     try:
         console.print("[dim]Checking AI Engine (Ollama)...[/dim]")
         import socket
-        import time
-        import subprocess
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         result = sock.connect_ex(('127.0.0.1', 11434))
         if result != 0:

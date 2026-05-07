@@ -245,10 +245,8 @@ def main():
     print("🔄 Refreshing Ollama Service...")
     try:
         os.system("taskkill /F /IM ollama.exe /T >nul 2>&1")
-        import time
         time.sleep(2)
         # Start Ollama in background silently
-        import subprocess
         subprocess.Popen(["ollama", "serve"], creationflags=0x08000000)
         time.sleep(3)
     except Exception: pass

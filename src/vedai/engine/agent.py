@@ -31,7 +31,7 @@ class AgentLoop:
         max_steps = 10
         current_step = 0
         
-            while current_step < max_steps:
+        while current_step < max_steps:
             current_step += 1
             full_response = ""
             

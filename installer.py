@@ -67,8 +67,11 @@ def setup_ollama(download_path):
     
     # Check 1: System PATH
     is_installed = False
+    local_version = ""
     try:
-        subprocess.run(["ollama", "--version"], capture_output=True, check=True)
+        res = subprocess.run(["ollama", "--version"], capture_output=True, text=True, check=True)
+        # Typical output: "ollama version is 0.1.30"
+        local_version = res.stdout.strip().split()[-1]
         is_installed = True
     except:
         # Check 2: Direct path check
@@ -79,13 +82,31 @@ def setup_ollama(download_path):
         for exe_p in common_exe_paths:
             if os.path.exists(exe_p):
                 is_installed = True
+                local_version = "unknown"
                 break
     
     if is_installed:
-        print("✅ Ollama is already installed.")
-        return True
-    else:
-        print("❌ Ollama not found. Starting Autonomous Download...")
+        print(f"✅ Ollama found (Version: {local_version}). Checking for updates...")
+        try:
+            import urllib.request
+            import json
+            req = urllib.request.Request("https://api.github.com/repos/ollama/ollama/releases/latest", headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=5) as response:
+                latest_data = json.loads(response.read())
+                latest_version = latest_data.get('tag_name', '').lstrip('v')
+                
+                if latest_version and local_version != "unknown" and latest_version != local_version:
+                    print(f"🔄 New version {latest_version} available! Initiating Auto-Update...")
+                    is_installed = False # Force the download and install flow below
+                else:
+                    print("✨ Ollama is already up to date.")
+                    return True
+        except Exception as e:
+            print("ℹ️ Could not check for updates. Proceeding with current version.")
+            return True
+            
+    if not is_installed:
+        print("📥 Downloading Ollama Engine...")
         url = "https://ollama.com/download/OllamaSetup.exe"
         # ALWAYS download to the local folder first to avoid drive-specific errors
         setup_file = os.path.abspath("OllamaSetup.exe")

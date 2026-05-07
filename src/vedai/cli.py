@@ -153,7 +153,20 @@ def studio():
     console.print("="*50 + "\n")
 
     try:
-        console.print("[dim]Loading AI Engine...[/dim]")
+        console.print("[dim]Checking AI Engine (Ollama)...[/dim]")
+        import socket
+        import time
+        import subprocess
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        result = sock.connect_ex(('127.0.0.1', 11434))
+        if result != 0:
+            console.print("[yellow]Ollama is not running. Starting it silently in the background...[/yellow]")
+            # 0x08000000 is CREATE_NO_WINDOW
+            subprocess.Popen(["ollama", "serve"], creationflags=0x08000000)
+            time.sleep(3) # Give it time to boot
+        sock.close()
+
+        console.print("[dim]Loading VedAI Backend...[/dim]")
         from vedai.server import app
         
         console.print("[dim]Starting Web Browser...[/dim]")

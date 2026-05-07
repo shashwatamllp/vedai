@@ -119,7 +119,7 @@
             // Call Backend (FastAPI)
             try {
                 const selectedModel = document.getElementById('model-select').value;
-                const response = await fetch('http://127.0.0.1:8080/chat', {
+                const response = await fetch('/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: text, model: selectedModel })
@@ -162,7 +162,7 @@
         // Fetch Hardware Status & Models on Load
         async function updateStatus() {
             try {
-                const res = await fetch('http://127.0.0.1:8080/status');
+                const res = await fetch('/status');
                 const data = await res.json();
                 document.getElementById('cpu-load').innerText = `CPU: ${data.hardware.cpu_cores} Cores`;
                 document.getElementById('ram-load').innerText = `RAM: ${data.hardware.total_ram_gb}GB`;

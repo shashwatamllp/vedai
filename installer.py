@@ -213,11 +213,13 @@ def main():
     print("🔄 Refreshing Ollama Service...")
     try:
         os.system("taskkill /F /IM ollama.exe /T >nul 2>&1")
+        import time
         time.sleep(2)
-        # Start Ollama in background
-        subprocess.Popen(["ollama", "serve"], creationflags=subprocess.CREATE_NEW_CONSOLE)
+        # Start Ollama in background silently
+        import subprocess
+        subprocess.Popen(["ollama", "serve"], creationflags=0x08000000)
         time.sleep(3)
-    except: pass
+    except Exception: pass
     
     if not setup_ollama(install_path):
         sys.exit(1)
@@ -329,7 +331,7 @@ def main():
         # Final restart to ensure environment sync
         os.system("taskkill /F /IM ollama.exe /T >nul 2>&1")
         time.sleep(2)
-        subprocess.Popen(["ollama", "serve"], creationflags=subprocess.CREATE_NEW_CONSOLE)
+        subprocess.Popen(["ollama", "serve"], creationflags=0x08000000)
         time.sleep(3)
         
         # Launch Studio

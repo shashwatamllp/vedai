@@ -54,6 +54,55 @@ async def get_status():
     }
 
 
+@app.get("/browse")
+async def browse_filesystem(path: str = ""):
+    """Browse the local filesystem for project folder selection."""
+    import string
+
+    if not path:
+        # Return available drives on Windows
+        drives = []
+        for letter in string.ascii_uppercase:
+            drive = f"{letter}:\\"
+            if os.path.exists(drive):
+                try:
+                    usage = psutil.disk_usage(drive)
+                    drives.append({
+                        "name": drive,
+                        "path": drive,
+                        "type": "drive",
+                        "free_gb": round(usage.free / (1024**3), 1)
+                    })
+                except: pass
+        return {"current": "", "parent": None, "items": drives}
+
+    # List directory contents
+    target = Path(path)
+    if not target.exists() or not target.is_dir():
+        return {"error": "Path not found", "current": path, "items": []}
+
+    items = []
+    try:
+        for item in sorted(target.iterdir()):
+            if item.name.startswith('.') or item.name in ('$Recycle.Bin', 'System Volume Information'):
+                continue
+            if item.is_dir():
+                items.append({
+                    "name": item.name,
+                    "path": str(item),
+                    "type": "dir"
+                })
+    except PermissionError:
+        pass
+
+    parent = str(target.parent) if target.parent != target else None
+    return {
+        "current": str(target),
+        "parent": parent,
+        "items": items
+    }
+
+
 class WorkspacePayload(BaseModel):
     path: str
 

@@ -1,253 +1,447 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VedAI Web Studio | Autonomous Local AI</title>
+    <title>VedAI Studio | Autonomous Local AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .glass { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
-        .glow { box-shadow: 0 0 20px rgba(59,130,246,0.2); }
-        .code-font { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
-        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-        .typing::after { content: '▋'; animation: blink 1s step-end infinite; }
-        @keyframes blink { 50% { opacity: 0; } }
-        pre { white-space: pre-wrap; word-break: break-word; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #070b12; color: #cbd5e1; }
+        .glass { background: rgba(15,23,42,0.8); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.07); }
+        .glow-blue { box-shadow: 0 0 24px rgba(59,130,246,0.25); }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        ::-webkit-scrollbar { width: 3px; height: 3px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.2); border-radius: 99px; }
+        .tab-btn { transition: all 0.15s; }
+        .tab-btn.active { color: #60a5fa; border-bottom: 2px solid #3b82f6; }
+        .tab-btn:not(.active) { color: #475569; }
+        .step-line { font-size: 0.72rem; line-height: 1.6; }
+        .step-line.blue { color: #93c5fd; }
+        .step-line.green { color: #86efac; }
+        .step-line.red { color: #fca5a5; }
+        .step-line.yellow { color: #fde68a; }
+        .step-line.dim { color: #475569; }
+        .file-item:hover { background: rgba(59,130,246,0.08); }
+        .file-item.dir { color: #93c5fd; }
+        .file-item.file { color: #94a3b8; }
+        @keyframes pulse-dot { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+        .pulse { animation: pulse-dot 1.5s ease-in-out infinite; }
+        .project-btn { transition: all 0.2s; }
+        .project-btn:hover { background: rgba(59,130,246,0.15); border-color: rgba(59,130,246,0.5); }
     </style>
 </head>
-<body class="bg-[#080c14] text-gray-200 h-screen flex flex-col overflow-hidden">
+<body class="h-screen flex flex-col overflow-hidden">
 
-    <!-- Header -->
-    <header class="h-14 glass border-b border-white/5 flex items-center justify-between px-6 z-50 shrink-0">
-        <div class="flex items-center space-x-3">
-            <div class="w-7 h-7 bg-gradient-to-br from-blue-500 to-violet-600 rounded-lg flex items-center justify-center font-bold text-white text-sm glow">V</div>
-            <h1 class="text-lg font-semibold tracking-tight text-white">VedAI <span class="text-blue-400 text-xs font-light">Studio</span></h1>
+<!-- ═══ HEADER ═══ -->
+<header class="h-13 glass border-b border-white/5 flex items-center justify-between px-5 shrink-0" style="height:52px">
+    <div class="flex items-center gap-3">
+        <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white font-bold text-sm glow-blue">V</div>
+        <span class="font-semibold text-white text-sm">VedAI <span class="text-blue-400 font-light text-xs">Studio</span></span>
+        <!-- Connected Project Badge -->
+        <div id="project-badge" class="hidden items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-full text-xs text-blue-300 mono">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+            <span id="project-name">No Project</span>
         </div>
-        <div class="flex items-center space-x-4">
-            <select id="model-select" class="bg-gray-900/80 border border-white/10 text-white text-xs rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-blue-500 transition-all cursor-pointer">
-                <option>Loading models...</option>
-            </select>
-            <div id="hw-status" class="flex items-center space-x-3 text-xs bg-gray-900/50 px-3 py-1.5 rounded-full border border-white/5">
-                <span class="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-                <span id="cpu-load">CPU: --</span>
-                <span class="text-gray-600">|</span>
-                <span id="ram-load">RAM: --</span>
-            </div>
-            <div id="agent-status" class="text-xs px-3 py-1 rounded-full bg-gray-800 border border-white/5 text-gray-400">Idle</div>
+    </div>
+
+    <div class="flex items-center gap-3">
+        <select id="model-select" class="bg-slate-900 border border-white/10 text-white text-xs rounded-lg px-2.5 py-1.5 outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
+            <option>Loading...</option>
+        </select>
+        <div class="flex items-center gap-2 text-xs bg-slate-900/60 px-3 py-1.5 rounded-full border border-white/5">
+            <span class="w-1.5 h-1.5 rounded-full bg-green-400 pulse"></span>
+            <span id="cpu-load" class="text-slate-400">CPU --</span>
+            <span class="text-slate-700">|</span>
+            <span id="ram-load" class="text-slate-400">RAM --</span>
         </div>
-    </header>
+        <div id="agent-badge" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 border border-white/5 text-slate-500">Idle</div>
 
-    <!-- Main Content -->
-    <main class="flex-1 flex overflow-hidden">
+        <!-- Connect Project Button -->
+        <button onclick="openProjectModal()" class="project-btn flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-white/10 text-slate-300 bg-slate-800/60">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+            Connect Project
+        </button>
+    </div>
+</header>
 
-        <!-- Left: Chat -->
-        <section class="w-1/2 flex flex-col border-r border-white/5">
-            <div id="chat-messages" class="flex-1 overflow-y-auto p-5 space-y-5">
-                <div class="flex flex-col space-y-2">
-                    <div class="text-xs text-blue-400 font-semibold uppercase tracking-widest">VedAI</div>
-                    <div class="bg-blue-600/5 border border-blue-500/10 p-4 rounded-xl text-sm max-w-[92%]">
-                        Welcome to VedAI Studio. I can write code, run it, and fix errors — all locally on your machine. What are we building today?
-                    </div>
+<!-- ═══ MAIN ═══ -->
+<main class="flex-1 flex overflow-hidden">
+
+    <!-- LEFT: File Tree Sidebar (hidden until project connected) -->
+    <aside id="file-sidebar" class="hidden w-52 border-r border-white/5 bg-slate-950/40 flex flex-col shrink-0">
+        <div class="px-3 py-2 border-b border-white/5 flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Explorer</span>
+            <button onclick="loadFileTree()" class="text-slate-500 hover:text-slate-300 transition-colors" title="Refresh">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            </button>
+        </div>
+        <div id="file-tree" class="flex-1 overflow-y-auto p-2 text-xs mono space-y-0.5"></div>
+    </aside>
+
+    <!-- CENTER: Chat -->
+    <section class="flex flex-col border-r border-white/5" style="width:45%; min-width:0">
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-5 space-y-5">
+            <div class="space-y-2">
+                <div class="text-xs text-blue-400 font-semibold uppercase tracking-widest">VedAI</div>
+                <div class="bg-blue-600/5 border border-blue-500/10 p-4 rounded-xl text-sm max-w-[92%]">
+                    Welcome to VedAI Studio. Connect your project folder to get started, then tell me what to build!
                 </div>
             </div>
-
-            <div class="p-4 border-t border-white/5 glass shrink-0">
-                <div class="relative">
-                    <textarea id="user-input" rows="3"
-                        class="w-full bg-gray-900/60 border border-white/10 rounded-xl p-4 pr-14 focus:outline-none focus:border-blue-500 transition-all resize-none text-sm code-font"
-                        placeholder="Ask VedAI to build something... (Shift+Enter for newline)"></textarea>
-                    <button id="send-btn" class="absolute right-3 bottom-3 bg-blue-600 p-2 rounded-lg hover:bg-blue-500 transition-all glow">
-                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-                    </button>
-                </div>
+        </div>
+        <div class="p-4 border-t border-white/5 glass shrink-0">
+            <div class="relative">
+                <textarea id="user-input" rows="3"
+                    class="w-full bg-slate-900/60 border border-white/10 rounded-xl p-4 pr-12 focus:outline-none focus:border-blue-500 transition-all resize-none text-sm mono"
+                    placeholder="Ask VedAI to build something... (Enter to send, Shift+Enter for newline)"></textarea>
+                <button id="send-btn" class="absolute right-3 bottom-3 bg-blue-600 p-2 rounded-lg hover:bg-blue-500 transition-all glow-blue">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                </button>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- Right: Live Steps + Preview -->
-        <section class="w-1/2 flex flex-col bg-[#070b12]">
-            <!-- Tabs -->
-            <div class="h-10 border-b border-white/5 flex items-center px-4 space-x-4 shrink-0 bg-gray-900/30">
-                <button onclick="switchTab('steps')" id="tab-steps" class="text-xs font-medium text-blue-400 border-b-2 border-blue-500 pb-2 px-1">LIVE STEPS</button>
-                <button onclick="switchTab('preview')" id="tab-preview" class="text-xs font-medium text-gray-500 hover:text-gray-300 pb-2 px-1">PREVIEW</button>
-                <button onclick="switchTab('terminal')" id="tab-terminal" class="text-xs font-medium text-gray-500 hover:text-gray-300 pb-2 px-1">TERMINAL</button>
+    <!-- RIGHT: Panels -->
+    <section class="flex flex-col bg-slate-950/30 flex-1 min-w-0">
+        <!-- Tabs -->
+        <div class="h-10 border-b border-white/5 flex items-end px-4 gap-4 bg-slate-900/20 shrink-0">
+            <button onclick="switchTab('steps')" id="tab-steps" class="tab-btn active text-xs font-medium pb-2 px-1">LIVE STEPS</button>
+            <button onclick="switchTab('preview')" id="tab-preview" class="tab-btn text-xs font-medium pb-2 px-1">PREVIEW</button>
+            <button onclick="switchTab('terminal')" id="tab-terminal" class="tab-btn text-xs font-medium pb-2 px-1">TERMINAL</button>
+            <button onclick="switchTab('memory')" id="tab-memory" class="tab-btn text-xs font-medium pb-2 px-1">VEDAI.MD</button>
+        </div>
+
+        <!-- Steps Panel -->
+        <div id="panel-steps" class="flex-1 overflow-y-auto p-4 space-y-0.5">
+            <div class="step-line dim">Waiting for a task...</div>
+        </div>
+
+        <!-- Preview Panel -->
+        <div id="panel-preview" class="flex-1 hidden bg-white">
+            <iframe id="preview-frame" class="w-full h-full border-none"></iframe>
+        </div>
+
+        <!-- Terminal Panel -->
+        <div id="panel-terminal" class="flex-1 hidden overflow-y-auto p-4 bg-black/70 mono text-green-400 text-xs leading-relaxed">
+            <div class="text-slate-600">$ ready</div>
+        </div>
+
+        <!-- Memory Panel (VedAI.md) -->
+        <div id="panel-memory" class="flex-1 hidden overflow-y-auto p-4">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">VedAI.md — Project Memory</span>
+                <button onclick="loadMemory()" class="text-xs text-blue-400 hover:text-blue-300">↻ Refresh</button>
             </div>
+            <pre id="memory-content" class="text-xs mono text-slate-300 whitespace-pre-wrap leading-relaxed">Connect a project to see its memory...</pre>
+        </div>
+    </section>
+</main>
 
-            <!-- Steps Panel -->
-            <div id="panel-steps" class="flex-1 overflow-y-auto p-4 code-font text-gray-300 space-y-1">
-                <div class="text-gray-600 italic text-xs">Waiting for a task...</div>
+<!-- ═══ PROJECT CONNECT MODAL ═══ -->
+<div id="project-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
+    <div class="glass rounded-2xl p-6 w-[480px] shadow-2xl border border-white/10">
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-base font-semibold text-white">Connect Project Folder</h2>
+            <button onclick="closeProjectModal()" class="text-slate-500 hover:text-white transition-colors">✕</button>
+        </div>
+
+        <label class="block text-xs text-slate-400 mb-1.5">Project Path (absolute path)</label>
+        <div class="flex gap-2">
+            <input id="project-path-input" type="text"
+                class="flex-1 bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm mono text-white outline-none focus:border-blue-500 transition-all"
+                placeholder="e.g. C:\Users\rakes\myproject">
+            <button onclick="pasteFromClipboard()" class="text-xs px-3 py-2 rounded-lg border border-white/10 text-slate-400 hover:text-white hover:border-white/30 transition-all">Paste</button>
+        </div>
+
+        <div class="mt-3 text-xs text-slate-500">
+            💡 VedAI will create <code class="text-blue-400">VedAI.md</code> in this folder to remember your project context.
+        </div>
+
+        <div id="connect-error" class="hidden mt-3 text-xs text-red-400 bg-red-900/20 border border-red-500/20 rounded-lg px-3 py-2"></div>
+
+        <!-- Recent / Quick Paths -->
+        <div class="mt-4">
+            <div class="text-xs text-slate-500 mb-2">Quick Connect:</div>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="setPath('C:\\\\Users\\\\rakes\\\\vedai')" class="text-xs px-2.5 py-1 rounded-md bg-slate-800 border border-white/5 text-slate-400 hover:text-white hover:border-white/20 mono transition-all">vedai</button>
+                <button onclick="setPath(document.getElementById('user-home').textContent)" class="text-xs px-2.5 py-1 rounded-md bg-slate-800 border border-white/5 text-slate-400 hover:text-white hover:border-white/20 mono transition-all">Desktop</button>
             </div>
+            <span id="user-home" class="hidden">C:\Users\rakes\Desktop</span>
+        </div>
 
-            <!-- Preview Panel -->
-            <div id="panel-preview" class="flex-1 bg-white hidden">
-                <iframe id="preview-frame" class="w-full h-full border-none"></iframe>
-            </div>
+        <div class="flex gap-3 mt-5">
+            <button onclick="closeProjectModal()" class="flex-1 py-2 rounded-lg border border-white/10 text-sm text-slate-400 hover:border-white/20 hover:text-white transition-all">Cancel</button>
+            <button onclick="connectProject()" class="flex-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-sm text-white font-medium transition-all glow-blue">Connect →</button>
+        </div>
+    </div>
+</div>
 
-            <!-- Terminal Panel -->
-            <div id="panel-terminal" class="flex-1 overflow-y-auto p-4 bg-black/60 code-font text-green-400 text-xs hidden">
-                <div class="text-gray-600">$ awaiting commands...</div>
-            </div>
-        </section>
+<script>
+const chatMessages = document.getElementById('chat-messages');
+const userInput = document.getElementById('user-input');
+const sendBtn = document.getElementById('send-btn');
+const stepsPanel = document.getElementById('panel-steps');
+const terminalPanel = document.getElementById('panel-terminal');
+let isRunning = false;
+let currentWorkspace = '';
 
-    </main>
+// ─── TABS ───
+function switchTab(tab) {
+    ['steps','preview','terminal','memory'].forEach(t => {
+        const panel = document.getElementById(`panel-${t}`);
+        const btn = document.getElementById(`tab-${t}`);
+        panel.classList.add('hidden');
+        btn.classList.remove('active');
+    });
+    document.getElementById(`panel-${tab}`).classList.remove('hidden');
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    if (tab === 'memory') loadMemory();
+}
 
-    <script>
-        const chatMessages = document.getElementById('chat-messages');
-        const userInput = document.getElementById('user-input');
-        const sendBtn = document.getElementById('send-btn');
-        const stepsPanel = document.getElementById('panel-steps');
-        const terminalPanel = document.getElementById('panel-terminal');
-        const agentStatus = document.getElementById('agent-status');
-        let isRunning = false;
+// ─── PROJECT MODAL ───
+function openProjectModal() { document.getElementById('project-modal').classList.remove('hidden'); }
+function closeProjectModal() { document.getElementById('project-modal').classList.add('hidden'); }
+function setPath(p) { document.getElementById('project-path-input').value = p; }
+async function pasteFromClipboard() {
+    try {
+        const text = await navigator.clipboard.readText();
+        document.getElementById('project-path-input').value = text;
+    } catch {}
+}
 
-        function switchTab(tab) {
-            ['steps','preview','terminal'].forEach(t => {
-                document.getElementById(`panel-${t}`).classList.add('hidden');
-                document.getElementById(`tab-${t}`).classList.remove('text-blue-400','border-b-2','border-blue-500');
-                document.getElementById(`tab-${t}`).classList.add('text-gray-500');
-            });
-            document.getElementById(`panel-${tab}`).classList.remove('hidden');
-            document.getElementById(`tab-${tab}`).classList.add('text-blue-400','border-b-2','border-blue-500');
-            document.getElementById(`tab-${tab}`).classList.remove('text-gray-500');
-        }
+async function connectProject() {
+    const path = document.getElementById('project-path-input').value.trim();
+    if (!path) return;
 
-        function appendMessage(role, text) {
-            const wrap = document.createElement('div');
-            wrap.className = 'flex flex-col space-y-2';
-            const label = role === 'user'
-                ? '<div class="text-xs text-gray-500 font-semibold uppercase tracking-widest text-right">You</div>'
-                : '<div class="text-xs text-blue-400 font-semibold uppercase tracking-widest">VedAI</div>';
-            const bubble = role === 'user'
-                ? `<div class="bg-white/5 border border-white/10 p-4 rounded-xl max-w-[90%] self-end text-sm ml-auto">${text}</div>`
-                : `<div id="current-response" class="bg-blue-600/5 border border-blue-500/10 p-4 rounded-xl max-w-[92%] text-sm whitespace-pre-wrap"></div>`;
-            wrap.innerHTML = label + bubble;
-            chatMessages.appendChild(wrap);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-            return wrap.querySelector('#current-response');
-        }
+    const errEl = document.getElementById('connect-error');
+    errEl.classList.add('hidden');
 
-        function appendStep(text) {
-            const line = document.createElement('div');
-            line.className = 'text-xs leading-relaxed';
-            line.textContent = text;
-            // Color coding
-            if (text.includes('✅')) line.classList.add('text-green-400');
-            else if (text.includes('❌')) line.classList.add('text-red-400');
-            else if (text.includes('⚠️')) line.classList.add('text-yellow-400');
-            else if (text.includes('🧠') || text.includes('📋') || text.includes('⚙️') || text.includes('🔄')) line.classList.add('text-blue-300');
-            else line.classList.add('text-gray-300');
-            stepsPanel.appendChild(line);
-            stepsPanel.scrollTop = stepsPanel.scrollHeight;
-        }
-
-        async function sendMessage() {
-            if (isRunning) return;
-            const text = userInput.value.trim();
-            if (!text) return;
-            isRunning = true;
-            sendBtn.disabled = true;
-
-            appendMessage('user', text);
-            userInput.value = '';
-
-            const responseEl = appendMessage('assistant', '');
-            stepsPanel.innerHTML = '';
-            switchTab('steps');
-
-            agentStatus.textContent = 'Running...';
-            agentStatus.className = 'text-xs px-3 py-1 rounded-full bg-blue-900/50 border border-blue-500/30 text-blue-300';
-
-            const selectedModel = document.getElementById('model-select').value;
-
-            try {
-                const response = await fetch('/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text, model: selectedModel })
-                });
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let chatText = '';
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = decoder.decode(value);
-                    const lines = chunk.split('\n');
-                    for (const line of lines) {
-                        if (!line.startsWith('data: ')) continue;
-                        const data = line.slice(6).trim();
-                        if (data === '[DONE]') break;
-                        try {
-                            const payload = JSON.parse(data);
-                            const t = payload.text || '';
-
-                            // Everything goes to chat
-                            chatText += t;
-                            if (responseEl) responseEl.textContent = chatText;
-
-                            // Step indicators go to steps panel too
-                            if (t.trim()) {
-                                t.split('\n').forEach(l => { if (l.trim()) appendStep(l); });
-                            }
-
-                            // Detect terminal output → terminal panel
-                            if (t.includes('```') || t.includes('OUTPUT:')) {
-                                terminalPanel.innerHTML += `<div>${t}</div>`;
-                            }
-
-                            // Detect HTML preview
-                            if (chatText.includes('<!DOCTYPE html') || chatText.includes('<html')) {
-                                const match = chatText.match(/<html[\s\S]*<\/html>/i);
-                                if (match) {
-                                    document.getElementById('preview-frame').srcdoc = match[0];
-                                }
-                            }
-
-                            chatMessages.scrollTop = chatMessages.scrollHeight;
-                        } catch {}
-                    }
-                }
-            } catch (e) {
-                if (responseEl) {
-                    responseEl.textContent = '❌ Connection error. Make sure the server is running.';
-                    responseEl.classList.add('text-red-400');
-                }
-            }
-
-            agentStatus.textContent = 'Idle';
-            agentStatus.className = 'text-xs px-3 py-1 rounded-full bg-gray-800 border border-white/5 text-gray-400';
-            isRunning = false;
-            sendBtn.disabled = false;
-        }
-
-        // Load hardware status and models
-        async function loadStatus() {
-            try {
-                const res = await fetch('/status');
-                const data = await res.json();
-                document.getElementById('cpu-load').textContent = `CPU: ${data.hardware.cpu_cores} Cores`;
-                document.getElementById('ram-load').textContent = `RAM: ${data.hardware.ram_gb} GB`;
-
-                const sel = document.getElementById('model-select');
-                sel.innerHTML = '';
-                (data.installed_models || []).forEach(m => {
-                    const opt = document.createElement('option');
-                    opt.value = m; opt.textContent = m;
-                    if (m === data.recommended_model) opt.selected = true;
-                    sel.appendChild(opt);
-                });
-            } catch {}
-        }
-        loadStatus();
-
-        sendBtn.addEventListener('click', sendMessage);
-        userInput.addEventListener('keydown', e => {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    try {
+        const res = await fetch('/connect', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({path})
         });
-    </script>
+        const data = await res.json();
+
+        if (!data.success) {
+            errEl.textContent = '❌ ' + data.error;
+            errEl.classList.remove('hidden');
+            return;
+        }
+
+        currentWorkspace = data.workspace;
+        const name = data.workspace.split(/[\\/]/).pop();
+
+        // Update header badge
+        document.getElementById('project-name').textContent = name;
+        document.getElementById('project-badge').classList.remove('hidden');
+        document.getElementById('project-badge').classList.add('flex');
+
+        // Show file sidebar
+        document.getElementById('file-sidebar').classList.remove('hidden');
+        document.getElementById('file-sidebar').classList.add('flex');
+
+        closeProjectModal();
+        loadFileTree();
+
+        // Show confirmation in chat
+        appendAI(`📁 **Project Connected:** \`${data.workspace}\`\n\n${data.memory_summary}\n\nWhat would you like to build?`);
+
+        // Switch to memory tab to show VedAI.md
+        switchTab('memory');
+
+    } catch (e) {
+        errEl.textContent = '❌ Connection failed: ' + e.message;
+        errEl.classList.remove('hidden');
+    }
+}
+
+// ─── FILE TREE ───
+async function loadFileTree() {
+    const tree = document.getElementById('file-tree');
+    tree.innerHTML = '<div class="text-slate-600">Loading...</div>';
+    try {
+        const res = await fetch('/workspace/tree');
+        const data = await res.json();
+        tree.innerHTML = '';
+        (data.files || []).forEach(f => {
+            const el = document.createElement('div');
+            el.className = `file-item ${f.is_dir ? 'dir' : 'file'} px-2 py-0.5 rounded cursor-default truncate`;
+            el.style.paddingLeft = `${(f.depth * 12) + 8}px`;
+            const icon = f.is_dir ? '📁' : getFileIcon(f.path);
+            el.textContent = `${icon} ${f.path.split('/').pop()}`;
+            el.title = f.path;
+            tree.appendChild(el);
+        });
+    } catch {
+        tree.innerHTML = '<div class="text-red-400">Failed to load</div>';
+    }
+}
+
+function getFileIcon(path) {
+    const ext = path.split('.').pop().toLowerCase();
+    const icons = { py:'🐍', js:'🟨', ts:'🔷', html:'🌐', css:'🎨', json:'📋', md:'📝', txt:'📄', sh:'⚡', bat:'⚡' };
+    return icons[ext] || '📄';
+}
+
+// ─── MEMORY ───
+async function loadMemory() {
+    const el = document.getElementById('memory-content');
+    if (!currentWorkspace) { el.textContent = 'Connect a project to see its memory...'; return; }
+    try {
+        const res = await fetch(`/workspace/tree`);
+        // Read VedAI.md via file tree (we'll add a direct endpoint)
+        el.textContent = 'VedAI.md is being updated by the agent after each task.';
+    } catch {}
+}
+
+// ─── CHAT ───
+function appendUser(text) {
+    const wrap = document.createElement('div');
+    wrap.className = 'space-y-1.5 flex flex-col items-end';
+    wrap.innerHTML = `<div class="text-xs text-slate-500 font-semibold uppercase tracking-widest">You</div>
+                      <div class="bg-white/5 border border-white/10 p-3.5 rounded-xl max-w-[92%] text-sm mono text-slate-200">${escHtml(text)}</div>`;
+    chatMessages.appendChild(wrap);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function appendAI(text) {
+    const wrap = document.createElement('div');
+    wrap.className = 'space-y-1.5';
+    const bubble = document.createElement('div');
+    bubble.id = 'current-response';
+    bubble.className = 'bg-blue-600/5 border border-blue-500/10 p-3.5 rounded-xl max-w-[92%] text-sm whitespace-pre-wrap';
+    bubble.textContent = text;
+    wrap.innerHTML = `<div class="text-xs text-blue-400 font-semibold uppercase tracking-widest">VedAI</div>`;
+    wrap.appendChild(bubble);
+    chatMessages.appendChild(wrap);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return bubble;
+}
+
+function appendStep(text) {
+    const line = document.createElement('div');
+    line.className = 'step-line mono';
+    let cls = 'dim';
+    if (text.includes('✅') || text.includes('Success')) cls = 'green';
+    else if (text.includes('❌') || text.includes('Error') || text.includes('Failed')) cls = 'red';
+    else if (text.includes('⚠️')) cls = 'yellow';
+    else if (['🧠','📋','⚙️','🔄','📁','📝'].some(e => text.includes(e))) cls = 'blue';
+    line.classList.add(cls);
+    line.textContent = text;
+    stepsPanel.appendChild(line);
+    stepsPanel.scrollTop = stepsPanel.scrollHeight;
+}
+
+function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function sendMessage() {
+    if (isRunning) return;
+    const text = userInput.value.trim();
+    if (!text) return;
+    isRunning = true;
+    sendBtn.disabled = true;
+
+    appendUser(text);
+    userInput.value = '';
+    const responseEl = appendAI('');
+    stepsPanel.innerHTML = '';
+    terminalPanel.innerHTML = '<div class="text-slate-600">$ running...</div>';
+    switchTab('steps');
+
+    const agentBadge = document.getElementById('agent-badge');
+    agentBadge.textContent = 'Running...';
+    agentBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-blue-900/40 border border-blue-500/30 text-blue-300';
+
+    const model = document.getElementById('model-select').value;
+
+    try {
+        const res = await fetch('/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message: text, model})
+        });
+
+        const reader = res.body.getReader();
+        const dec = new TextDecoder();
+        let chatText = '';
+
+        while (true) {
+            const {done, value} = await reader.read();
+            if (done) break;
+            const chunk = dec.decode(value);
+            for (const line of chunk.split('\n')) {
+                if (!line.startsWith('data: ')) continue;
+                const data = line.slice(6).trim();
+                if (data === '[DONE]') break;
+                try {
+                    const {text: t} = JSON.parse(data);
+                    if (!t) continue;
+                    chatText += t;
+                    responseEl.textContent = chatText;
+                    // Steps panel
+                    t.split('\n').forEach(l => { if (l.trim()) appendStep(l); });
+                    // Terminal
+                    if (t.includes('```') || t.includes('OUTPUT:') || t.includes('$ ')) {
+                        terminalPanel.innerHTML += `<div>${escHtml(t)}</div>`;
+                    }
+                    // HTML Preview
+                    const htmlMatch = chatText.match(/<html[\s\S]*<\/html>/i);
+                    if (htmlMatch) {
+                        document.getElementById('preview-frame').srcdoc = htmlMatch[0];
+                    }
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                } catch {}
+            }
+        }
+
+        // Refresh file tree after task
+        if (currentWorkspace) setTimeout(loadFileTree, 500);
+
+    } catch (e) {
+        responseEl.textContent = '❌ Server not reachable. Make sure VedAI is running.';
+        responseEl.classList.add('text-red-400');
+    }
+
+    agentBadge.textContent = 'Idle';
+    agentBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-slate-800 border border-white/5 text-slate-500';
+    isRunning = false;
+    sendBtn.disabled = false;
+}
+
+// ─── STATUS ───
+async function loadStatus() {
+    try {
+        const res = await fetch('/status');
+        const data = await res.json();
+        document.getElementById('cpu-load').textContent = `CPU ${data.hardware.cpu_cores}c`;
+        document.getElementById('ram-load').textContent = `RAM ${data.hardware.ram_gb}GB`;
+
+        const sel = document.getElementById('model-select');
+        sel.innerHTML = '';
+        (data.installed_models || []).forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m; opt.textContent = m;
+            if (m === data.recommended_model) opt.selected = true;
+            sel.appendChild(opt);
+        });
+
+        if (data.workspace) {
+            currentWorkspace = data.workspace;
+        }
+    } catch {}
+}
+loadStatus();
+
+sendBtn.addEventListener('click', sendMessage);
+userInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+</script>
 </body>
 </html>

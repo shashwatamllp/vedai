@@ -1,4 +1,5 @@
 import httpx
+import requests
 
 
 class OllamaClient:
@@ -10,8 +11,15 @@ class OllamaClient:
         )
 
         self.model = (
-            "qwen2.5-coder:7b"
+            "llama3.2:latest"
         )
+
+    def get_installed_models(self) -> list:
+        try:
+            response = requests.get(f"{self.base_url}/api/tags", timeout=3)
+            return [m['name'] for m in response.json().get('models', [])]
+        except:
+            return [self.model]
 
     async def generate(
         self,
@@ -30,7 +38,7 @@ class OllamaClient:
                     "stream": False
                 }
             )
-            
+
             if response.status_code != 200:
                 return f"Error from LLM: {response.text}"
 

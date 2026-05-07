@@ -40,16 +40,17 @@ async def get_status():
     import psutil
     cpu_cores = psutil.cpu_count(logical=True)
     ram_gb = round(psutil.virtual_memory().total / (1024**3), 2)
+    installed_models = client.get_installed_models()
+    recommended = installed_models[0] if installed_models else client.model
     
     return {
         "status": "ready",
         "hardware": {
             "cpu_cores": cpu_cores,
-            "ram_gb": ram_gb,
-            "has_gpu": False # Placeholder
+            "ram_gb": ram_gb
         },
-        "recommended_model": client.model,
-        "installed_models": [client.model]
+        "recommended_model": recommended,
+        "installed_models": installed_models
     }
 
 class ChatPayload(BaseModel):
@@ -58,15 +59,15 @@ class ChatPayload(BaseModel):
 
 @app.post("/chat")
 async def chat(payload: ChatPayload):
-    # The UI expects an SSE stream.
+    # Use whichever model the user selected in the UI
+    runtime.planner.llm.model = payload.model
+    
     async def event_generator():
-        yield f"data: {json.dumps({'text': '🤔 Thinking (Planner)...'})}\n\n"
+        yield f"data: {json.dumps({'text': '🤔 Thinking...'})}\n\n"
         
         result = await runtime.run(payload.message)
-        
-        # Send the final plan and result
         plan = result.get("plan", "")
-        yield f"data: {json.dumps({'text': f'\n**Plan:**\n{plan}\n'})}\n\n"
+        yield f"data: {json.dumps({'text': f'\n{plan}\n'})}\n\n"
         
         yield "data: [DONE]\n\n"
 

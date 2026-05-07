@@ -37,11 +37,17 @@ async def get_studio():
 
 @app.get("/status")
 async def get_status():
-    # The UI needs this to load
-    # Because ollama.py doesn't have get_installed_models yet, we just return a dummy list for now
+    import psutil
+    cpu_cores = psutil.cpu_count(logical=True)
+    ram_gb = round(psutil.virtual_memory().total / (1024**3), 2)
+    
     return {
         "status": "ready",
-        "hardware": "Local Setup",
+        "hardware": {
+            "cpu_cores": cpu_cores,
+            "ram_gb": ram_gb,
+            "has_gpu": False # Placeholder
+        },
         "recommended_model": client.model,
         "installed_models": [client.model]
     }

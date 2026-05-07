@@ -137,48 +137,49 @@ def chat(
 @app.command()
 def studio():
     """Launch the Premium VedAI Web Studio."""
-    import webbrowser
     import uvicorn
-    
+
     # [STORAGE SAFETY] Ensure OLLAMA_MODELS path is valid
     om_path = os.environ.get("OLLAMA_MODELS", "")
     if om_path and not os.path.exists(om_path):
-        console.print("[yellow]⚠️ Detected broken model storage path. Reverting to C: drive...[/yellow]")
+        console.print("[yellow]⚠️ Broken model path detected. Reverting...[/yellow]")
         os.environ["OLLAMA_MODELS"] = ""
         subprocess.run('setx OLLAMA_MODELS ""', shell=True, capture_output=True)
-    
+
     console.print("\n" + "="*50)
-    console.print("🚀 [bold cyan]LAUNCHING VED-AI PREMIUM STUDIO[/bold cyan]")
-    console.print("📍 URL: [bold green]http://127.0.0.1:8080[/bold green]")
+    console.print("🚀 [bold cyan]LAUNCHING VED-AI NATIVE STUDIO[/bold cyan]")
     console.print("="*50 + "\n")
 
     try:
+        # Auto-start Ollama if not running
         console.print("[dim]Checking AI Engine (Ollama)...[/dim]")
         import socket
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         result = sock.connect_ex(('127.0.0.1', 11434))
         if result != 0:
-            console.print("[yellow]Ollama is not running. Starting it silently in the background...[/yellow]")
-            # 0x08000000 is CREATE_NO_WINDOW
+            console.print("[yellow]Ollama not running. Starting silently...[/yellow]")
             subprocess.Popen(["ollama", "serve"], creationflags=0x08000000)
-            time.sleep(3) # Give it time to boot
+            time.sleep(3)
         sock.close()
 
-        console.print("[dim]Loading VedAI Backend...[/dim]")
+        # Launch as native desktop window
+        from vedai.app import launch
+        console.print("[bold green]Opening VedAI Native Window...[/bold green]")
+        launch()
+
+    except ImportError:
+        # Fallback to browser mode if pywebview not installed
+        console.print("[yellow]⚠️ PyWebView not found — falling back to browser mode.[/yellow]")
+        import webbrowser, threading
         from vedai.server import app
-        
-        console.print("[dim]Starting Web Browser...[/dim]")
-        def open_browser():
-            time.sleep(3)
-            webbrowser.open("http://127.0.0.1:8080")
-        
-        import threading
-        threading.Thread(target=open_browser, daemon=True).start()
-        
-        console.print("[bold green]Server is Running![/bold green]")
+        threading.Thread(
+            target=lambda: (time.sleep(2), webbrowser.open("http://127.0.0.1:8080")),
+            daemon=True
+        ).start()
+        console.print("[bold green]Server is Running (Browser Mode)![/bold green]")
         uvicorn.run(app, host="127.0.0.1", port=8080, log_level="info")
     except Exception as e:
-        console.print(f"\n[bold red]STUDIO CRITICAL ERROR:[/bold red] {e}")
+        console.print(f"\n[bold red]STUDIO ERROR:[/bold red] {e}")
         import traceback
         traceback.print_exc()
         input("\nPress Enter to exit...")

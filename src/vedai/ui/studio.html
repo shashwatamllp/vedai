@@ -210,9 +210,21 @@ function switchTab(tab) {
 let selectedFolderPath = '';
 
 function openProjectModal() {
+    // Try native OS folder picker first (works only in PyWebView native app)
+    if (window.pywebview && window.pywebview.api) {
+        window.pywebview.api.choose_folder().then(path => {
+            if (path) {
+                selectedFolderPath = path;
+                // Auto-connect immediately
+                connectProject();
+            }
+        });
+        return;
+    }
+    // Fallback: browser-based folder browser
     document.getElementById('project-modal').classList.remove('hidden');
     document.getElementById('connect-error').classList.add('hidden');
-    browseTo(''); // Start at drives
+    browseTo('');
 }
 function closeProjectModal() {
     document.getElementById('project-modal').classList.add('hidden');

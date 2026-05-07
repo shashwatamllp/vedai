@@ -197,10 +197,15 @@ def main():
 
     # 4. App & Environment Setup
     print("📦 [STAGE 3] Building Private Environment & Dependencies...")
-    # Environment stays on C: for stability (it's small ~300MB)
-    local_appdata = os.environ.get("LOCALAPPDATA", "C:\\")
-    env_path = os.path.join(local_appdata, "VedAI_Bridge")
+    # Environment goes to the best drive to prevent C: drive out-of-space errors
+    env_path = os.path.join(install_path, "VedAI_Bridge")
     os.makedirs(env_path, exist_ok=True)
+    
+    # Force pip to use the best drive for temp files if C: is full
+    temp_path = os.path.join(install_path, "Temp")
+    os.makedirs(temp_path, exist_ok=True)
+    os.environ["TEMP"] = temp_path
+    os.environ["TMP"] = temp_path
     
     venv_path = os.path.join(env_path, "venv")
     python_exe = sys.executable

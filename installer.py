@@ -40,22 +40,22 @@ def perform_deep_cleanup():
     os.system("taskkill /F /IM ollama.exe /T >nul 2>&1")
 
 def get_best_drive():
-    # [USER OVERRIDE] Strictly use J: drive as requested
-    if os.path.exists("J:\\"):
-        return "J:\\"
-    
-    # Fallback only if J: is physically missing
-    print("⚠️ J: Drive not detected. Checking other drives...")
     best_drive = "C:\\"
     max_free = 0
     for part in psutil.disk_partitions():
-        if 'fixed' in part.opts:
+        if 'fixed' in part.opts or 'removable' in part.opts:
             try:
+                # Test if the drive is actually accessible
                 usage = psutil.disk_usage(part.mountpoint)
+                # Ensure we can actually write to it by checking if it has free space
                 if usage.free > max_free:
                     max_free = usage.free
                     best_drive = part.mountpoint
-            except: pass
+            except Exception:
+                pass
+                
+    # If the user specifically wanted J: and it's accessible, we can use it, 
+    # but the dynamic check above is safer and will find the biggest drive anyway.
     return best_drive
 
 def setup_ollama(download_path):

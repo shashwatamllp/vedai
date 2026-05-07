@@ -38,14 +38,8 @@ hw = HardwareEngine()
 tools = ToolEngine()
 ctx_mgr = ContextManager()
 
-# [USER OVERRIDE] Flexible Storage Fallback
-if os.path.exists("J:\\"):
-    os.environ["OLLAMA_MODELS"] = r"J:\VedAI_System\Models"
-elif os.path.exists("I:\\"):
-    os.environ["OLLAMA_MODELS"] = r"I:\VedAI_System\Models"
-else:
-    # Default path (C: is handled by Ollama by default)
-    pass
+# [STORAGE] OLLAMA_MODELS is automatically set in the user's environment by the installer.
+# We trust the environment variables or Ollama's default path.
 
 class ChatRequest(BaseModel):
     message: str

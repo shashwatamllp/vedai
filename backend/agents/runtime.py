@@ -1,5 +1,6 @@
 from backend.core.state import AgentState
 from backend.memory.context_memory import ContextMemory
+from backend.memory.project_memory import ProjectMemory
 from backend.agents.planner import Planner
 from backend.agents.executor import Executor
 from backend.agents.verifier import Verifier
@@ -21,8 +22,10 @@ class RuntimeAgent:
     5. Repeat up to MAX_RETRIES times
     """
 
-    def __init__(self):
+    def __init__(self, workspace: str = "."):
         self.memory = ContextMemory()
+        self.project_memory = ProjectMemory(workspace=workspace)
+        self.project_memory.initialize()  # Creates VedAI.md if not present
         self.planner = Planner()
         self.executor = Executor()
         self.verifier = Verifier()
@@ -30,7 +33,11 @@ class RuntimeAgent:
 
     async def run(self, task: str):
         state = AgentState(task=task)
-        context = self.memory.build_context()
+        
+        # Build context from both short-term (conversation) and long-term (VedAI.md) memory
+        short_term = self.memory.build_context()
+        long_term = self.project_memory.get_context_summary()
+        context = f"{long_term}\n\nRecent conversation:\n{short_term}"
 
         # --- Step 1: Plan ---
         plan = await self.planner.create_plan(task=task, context=context)
@@ -52,12 +59,19 @@ class RuntimeAgent:
             if verification["passed"]:
                 # SUCCESS
                 state.completed = True
-                self.memory.add({
-                    "task": task,
-                    "plan": current_plan,
-                    "result": exec_result["output"],
-                    "status": "success"
-                })
+                actions = exec_result.get("actions_taken", [])
+                files_created = [a["action"] for a in actions if "write_file" in a.get("action", "")]
+                commands_run = [a["action"] for a in actions if "run:" in a.get("action", "")]
+                
+                # Log to VedAI.md (long-term memory)
+                self.project_memory.log_task(
+                    task=task,
+                    plan=current_plan,
+                    files_created=files_created,
+                    commands_run=commands_run,
+                    status="success"
+                )
+                self.memory.add({"task": task, "result": exec_result["output"], "status": "success"})
                 return {
                     "task": task,
                     "plan": current_plan,
@@ -83,8 +97,15 @@ class RuntimeAgent:
                         "content": corrected_plan
                     })
 
-        # All retries exhausted
+        # All retries exhausted — log failure too
         state.completed = False
+        self.project_memory.log_task(
+            task=task,
+            plan=current_plan,
+            files_created=[],
+            commands_run=[],
+            status="failed"
+        )
         return {
             "task": task,
             "plan": current_plan,
